@@ -31,12 +31,14 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	class UCameraComponent* FollowCamera;
 
-	// OverheadWidget º¯¼ö¸¦ Ã»»çÁø¿¡ ³ëÃâÇÏÁö¸¸, ¿ÜºÎ¿¡¼­ Á÷Á¢ ¼öÁ¤ÇÒ ¼ö ¾øµµ·Ï "BlueprintReadOnly"·Î ¼³Á¤.
-	// "AllowPrivateAccess = true"·Î ¼³Á¤ÇÏ¿© Å¬·¡½º ³»ºÎ¿¡¼­¸¸ Á¢±Ù °¡´ÉÇÏ°Ô ÇÔ.
+	// OverheadWidget ë³€ìˆ˜ë¥¼ ì²­ì‚¬ì§„ì— ë…¸ì¶œí•˜ì§€ë§Œ, ì™¸ë¶€ì—ì„œ ì§ì ‘ ìˆ˜ì •í•  ìˆ˜ ì—†ë„ë¡ "BlueprintReadOnly"ë¡œ ì„¤ì •.
+	// "AllowPrivateAccess = true"ë¡œ ì„¤ì •í•˜ì—¬ í´ë˜ìŠ¤ ë‚´ë¶€ì—ì„œë§Œ ì ‘ê·¼ ê°€ëŠ¥í•˜ê²Œ í•¨.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UWidgetComponent* OverheadWidget;
 
 public:	
 	
-
+	
 };
+
+// í•œê¸€ ì£¼ì„ í…ŒìŠ¤íŠ¸

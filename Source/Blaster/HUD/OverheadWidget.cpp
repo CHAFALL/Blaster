@@ -51,16 +51,16 @@ void UOverheadWidget::ShowPlayerNetRole(APawn* InPawn)
 		break;
 	}
 
-	// Âü°í
-	// ÇÃ·¹ÀÌ¾î ÀÌ¸§À» °¡Á®¿È (PlayerState¿¡¼­)
+	// ì°¸ê³ 
+	// í”Œë ˆì´ì–´ ì´ë¦„ì„ ê°€ì ¸ì˜´ (PlayerStateì—ì„œ)
 	/*FString PlayerName = "Unknown";
 	if (APlayerState* PlayerState = InPawn->GetPlayerState<APlayerState>())
 	{
 		PlayerName = PlayerState->GetPlayerName();
-	}
+	}*/
 
 	FString RoleStr = FString::Printf(TEXT("Local Role: %s\n Remote Role: %s"), *LocalRoleStr, *RemoteRoleStr);
-	SetDisplayText(RoleStr);*/
+	SetDisplayText(RoleStr);
 }
 
 void UOverheadWidget::NativeDestruct()
