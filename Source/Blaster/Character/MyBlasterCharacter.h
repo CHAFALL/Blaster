@@ -31,6 +31,11 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	class UCameraComponent* FollowCamera;
 
+	// OverheadWidget 변수를 청사진에 노출하지만, 외부에서 직접 수정할 수 없도록 "BlueprintReadOnly"로 설정.
+	// "AllowPrivateAccess = true"로 설정하여 클래스 내부에서만 접근 가능하게 함.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class UWidgetComponent* OverheadWidget;
+
 public:	
 	
 
