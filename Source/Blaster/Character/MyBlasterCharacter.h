@@ -16,6 +16,10 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	// 변수 복제를 하는 모든 클래스에서 재정의해야만 하는 함수.
+	// Replicated 프로퍼티가 복제되도록 Unreal의 네트워크 시스템에 알려주는 역할을 합니다.
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -36,9 +40,14 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UWidgetComponent* OverheadWidget;
 
-public:	
-	
-	
-};
+	// 값이 변하자마자 복제될 것임. (모든 MyBlasterCharacter에 변수가 설정됨.)
+	UPROPERTY(ReplicatedUsing = OnRep_OverlappingWeapon) // 값이 바뀔 때 OnRep_OverlappingWeapon함수 호출.
+	class AWeapon* OverlappingWeapon;
 
-// 한글 주석 테스트
+	// 복제된 후에 클라이언트가 해야 할 작업을 정의
+	UFUNCTION()
+	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
+
+public:	
+	void SetOverlappingWeapon(AWeapon* Weapon);
+};
