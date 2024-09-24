@@ -15,10 +15,10 @@ public:
 	AMyBlasterCharacter();
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 	// 변수 복제를 하는 모든 클래스에서 재정의해야만 하는 함수.
 	// Replicated 프로퍼티가 복제되도록 Unreal의 네트워크 시스템에 알려주는 역할을 합니다.
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void PostInitializeComponents() override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -27,6 +27,7 @@ protected:
 	void MoveRight(float Value);
 	void Turn(float Value);
 	void LookUp(float Value);
+	void EquipButtonPressed();
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -47,6 +48,14 @@ private:
 	// 복제된 후에 클라이언트가 해야 할 작업을 정의
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
+
+	UPROPERTY(VisibleAnywhere)
+	class UCombatComponent* Combat;
+
+	// RPC -> Server : 클라가 서버를 호출하는 느낌.
+	// Client : 서버가 클라이언트에게 할 것 토스하는 느낌.
+	UFUNCTION(Server, Reliable)
+	void ServerEquipButtonPressed();
 
 public:	
 	void SetOverlappingWeapon(AWeapon* Weapon);

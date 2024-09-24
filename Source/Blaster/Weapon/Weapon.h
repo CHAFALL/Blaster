@@ -26,6 +26,7 @@ class BLASTER_API AWeapon : public AActor
 public:	
 	AWeapon();
 	virtual void Tick(float DeltaTime) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	void ShowPickupWidget(bool bShowWidget);
 
 protected:
@@ -53,15 +54,23 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	USkeletalMeshComponent* WeaponMesh;
 
-
 	// 무기에 닿는 판정을 위해 (캐릭터와 겹치는 부분 감지) - 이부분은 중요해서 서버에서만 하는 게 좋다.
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	class USphereComponent* AreaSphere;
 
-	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
+	UPROPERTY(ReplicatedUsing = OnRep_WeaponState, VisibleAnywhere, Category = "Weapon Properties")
 	EWeaponState WeaponState;
+
+	UFUNCTION()
+	void OnRep_WeaponState();
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
 	class UWidgetComponent* PickupWidget;
+
+public:
+	void SetWeaponState(EWeaponState State);
+	// 중첩 이벤트는 서버에서만 발동.
+	// 서버는 다른 클라가 장착한 무기에 가까이 가도 E 장착 Text가 뜨는 문제가 있는데 그걸 해결하기 위해 구의 충돌을 무력화할 것임.
+	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; }
 
 };

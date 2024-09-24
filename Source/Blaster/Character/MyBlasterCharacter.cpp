@@ -7,6 +7,7 @@
 #include "Components/WidgetComponent.h"
 #include "Net/UnrealNetwork.h" // 복제 관련
 #include "Blaster/Weapon/Weapon.h"
+#include "Blaster/BlasterComponents/CombatComponent.h"
 
 AMyBlasterCharacter::AMyBlasterCharacter()
 {
@@ -26,6 +27,10 @@ AMyBlasterCharacter::AMyBlasterCharacter()
 
 	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
 	OverheadWidget->SetupAttachment(RootComponent);
+
+	Combat = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
+	// Combat을 통해 우리 캐릭터의 모든 전투 관련 기능을 처리할 것이다. 즉, 전투 구성 요소에 복제될 변수가 있다는 의미!
+	Combat->SetIsReplicated(true); // 복제 구성 요소로 지정. 부품은 특별해서 등록이 필요 x
 }
 
 void AMyBlasterCharacter::BeginPlay()
@@ -52,6 +57,17 @@ void AMyBlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 	PlayerInputComponent->BindAxis("Turn", this, &AMyBlasterCharacter::Turn);
 	PlayerInputComponent->BindAxis("LookUp", this, &AMyBlasterCharacter::LookUp);
 
+	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &AMyBlasterCharacter::EquipButtonPressed);
+
+}
+
+void AMyBlasterCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	if (Combat)
+	{
+		Combat->Character = this;
+	}
 }
 
 void AMyBlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -64,6 +80,8 @@ void AMyBlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	// 알림 호출 위치를 잘 설정하면 서버에서도 안 보임.
 	DOREPLIFETIME_CONDITION(AMyBlasterCharacter, OverlappingWeapon, COND_OwnerOnly);
 }
+
+
 
 void AMyBlasterCharacter::MoveForward(float Value)
 {
@@ -93,6 +111,33 @@ void AMyBlasterCharacter::Turn(float Value)
 void AMyBlasterCharacter::LookUp(float Value)
 {
 	AddControllerPitchInput(Value);
+}
+
+void AMyBlasterCharacter::EquipButtonPressed()
+{
+	// 누누이 말하지만 무기 관련된 것은 서버에서 다뤄야됨.
+	if (Combat)
+	{
+		if (HasAuthority())
+		{
+			Combat->EquipWeapon(OverlappingWeapon);
+		}
+		else
+		{
+			ServerEquipButtonPressed();
+		}
+
+	}
+
+}
+
+void AMyBlasterCharacter::ServerEquipButtonPressed_Implementation()
+{
+	// 이건 서버에서만 실행되므로 HasAuthority를 할 필요 x
+	if (Combat)
+	{
+		Combat->EquipWeapon(OverlappingWeapon);
+	}
 }
 
 // 서버는 적용이 안되는 것을 보완하기 위한.

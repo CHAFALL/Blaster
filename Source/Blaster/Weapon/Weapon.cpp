@@ -5,6 +5,7 @@
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Blaster/Character/MyBlasterCharacter.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 AWeapon::AWeapon()
@@ -61,6 +62,13 @@ void AWeapon::Tick(float DeltaTime)
 
 }
 
+void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AWeapon, WeaponState); // 이렇게 하면 무기 상태가 변경되면 알려짐.
+}
+
 void AWeapon::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	// 무기에 가까이 갔을 때만 E를 눌러 장착하라는 Text가 보이도록
@@ -80,6 +88,27 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	}
 }
 
+void AWeapon::SetWeaponState(EWeaponState State)
+{
+	WeaponState = State;
+	switch (WeaponState)
+	{
+	case EWeaponState::EWS_Equipped:
+		ShowPickupWidget(false);
+		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		break;
+	}
+}
+
+void AWeapon::OnRep_WeaponState()
+{
+	switch (WeaponState)
+	{
+	case EWeaponState::EWS_Equipped:
+		ShowPickupWidget(false);
+		break;
+	}
+}
 
 
 void AWeapon::ShowPickupWidget(bool bShowWidget)
