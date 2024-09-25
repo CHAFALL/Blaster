@@ -31,6 +31,8 @@ AMyBlasterCharacter::AMyBlasterCharacter()
 	Combat = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	// Combat을 통해 우리 캐릭터의 모든 전투 관련 기능을 처리할 것이다. 즉, 전투 구성 요소에 복제될 변수가 있다는 의미!
 	Combat->SetIsReplicated(true); // 복제 구성 요소로 지정. 부품은 특별해서 등록이 필요 x
+
+	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 }
 
 void AMyBlasterCharacter::BeginPlay()
@@ -45,7 +47,6 @@ void AMyBlasterCharacter::Tick(float DeltaTime)
 
 }
 
-
 void AMyBlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -58,6 +59,7 @@ void AMyBlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 	PlayerInputComponent->BindAxis("LookUp", this, &AMyBlasterCharacter::LookUp);
 
 	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &AMyBlasterCharacter::EquipButtonPressed);
+	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AMyBlasterCharacter::CrouchButtonPressed);
 
 }
 
@@ -140,6 +142,18 @@ void AMyBlasterCharacter::ServerEquipButtonPressed_Implementation()
 	}
 }
 
+void AMyBlasterCharacter::CrouchButtonPressed()
+{
+	if (bIsCrouched)
+	{
+		UnCrouch();
+	}
+	else
+	{
+		Crouch();
+	}
+}
+
 // 서버는 적용이 안되는 것을 보완하기 위한.
 // 클라이언트 측에서 추가 로직을 수행!!!!!!!
 // 이렇게 하면 담당자 알림이 서버에서 호출되지 않기 때문에 서버에서 위젯을 가져오지 않음
@@ -161,6 +175,8 @@ void AMyBlasterCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 }
 
 
+
+
 void AMyBlasterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 {
 	if (OverlappingWeapon)
@@ -173,6 +189,10 @@ void AMyBlasterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 	}
 }
 
+bool AMyBlasterCharacter::IsWeaponEquipped()
+{
+	return (Combat && Combat->EquippedWeapon);
+}
 
 
 
