@@ -7,6 +7,7 @@
 #include "Engine/SkeletalMeshSocket.h"
 #include "Components/SphereComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 UCombatComponent::UCombatComponent()
 {
@@ -33,6 +34,15 @@ void UCombatComponent::SetAiming(bool bIsAiming)
 	// 그냥 이렇게 해도 됨(RPC 특징을 보면.) (서버만 실행되고 다른데선 어차피 안됨.)
 	ServerSetAiming(bIsAiming);
 
+}
+
+void UCombatComponent::OnRep_EquippedWeapon()
+{
+	if (EquippedWeapon && Character)
+	{
+		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
+		Character->bUseControllerRotationYaw = true;
+	}
 }
 
 // 클라 -> 서버
@@ -73,6 +83,7 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	// 하지만 장비를 장착하자마자 장비를 장착한 캐릭터에게 배정해야 됨.
 	// Go To Declaration해서 타서 들어가보면 주인이 복제 될 때 신고하는 기능이 있음을 알 수 있음.
 	EquippedWeapon->SetOwner(Character);
-	
+	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
+	Character->bUseControllerRotationYaw = true;
 }
 
