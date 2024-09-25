@@ -22,6 +22,25 @@ void UCombatComponent::BeginPlay()
 	
 }
 
+// 원래는 bool값을 캐릭터쪽에서 직접 바꿔줬는데 아래 함수를 실행하기 위해 SetAiming을 따로 파줌.
+void UCombatComponent::SetAiming(bool bIsAiming)
+{
+	bAiming = bIsAiming;
+	/*if (!Character->HasAuthority())
+	{
+		ServerSetAiming(bIsAiming);
+	}*/ 
+	// 그냥 이렇게 해도 됨(RPC 특징을 보면.) (서버만 실행되고 다른데선 어차피 안됨.)
+	ServerSetAiming(bIsAiming);
+
+}
+
+// 클라 -> 서버
+void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)
+{
+	bAiming = bIsAiming;
+}
+
 
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
@@ -34,6 +53,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UCombatComponent, EquippedWeapon);
+	DOREPLIFETIME(UCombatComponent, bAiming);
 }
 
 void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)

@@ -60,6 +60,8 @@ void AMyBlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 
 	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &AMyBlasterCharacter::EquipButtonPressed);
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &AMyBlasterCharacter::CrouchButtonPressed);
+	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &AMyBlasterCharacter::AimButtonPressed);
+	PlayerInputComponent->BindAction("Aim", IE_Released, this, &AMyBlasterCharacter::AimButtonReleased);
 
 }
 
@@ -154,6 +156,22 @@ void AMyBlasterCharacter::CrouchButtonPressed()
 	}
 }
 
+void AMyBlasterCharacter::AimButtonPressed()
+{
+	if (Combat)
+	{
+		Combat->SetAiming(true);
+	}
+}
+
+void AMyBlasterCharacter::AimButtonReleased()
+{
+	if (Combat)
+	{
+		Combat->SetAiming(false);
+	}
+}
+
 // 서버는 적용이 안되는 것을 보완하기 위한.
 // 클라이언트 측에서 추가 로직을 수행!!!!!!!
 // 이렇게 하면 담당자 알림이 서버에서 호출되지 않기 때문에 서버에서 위젯을 가져오지 않음
@@ -192,6 +210,11 @@ void AMyBlasterCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 bool AMyBlasterCharacter::IsWeaponEquipped()
 {
 	return (Combat && Combat->EquippedWeapon);
+}
+
+bool AMyBlasterCharacter::IsAiming()
+{
+	return (Combat && Combat->bAiming);
 }
 
 
