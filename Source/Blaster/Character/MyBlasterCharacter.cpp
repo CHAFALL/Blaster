@@ -8,6 +8,7 @@
 #include "Net/UnrealNetwork.h" // 복제 관련
 #include "Blaster/Weapon/Weapon.h"
 #include "Blaster/BlasterComponents/CombatComponent.h"
+#include "Components/CapsuleComponent.h"
 
 AMyBlasterCharacter::AMyBlasterCharacter()
 {
@@ -33,6 +34,9 @@ AMyBlasterCharacter::AMyBlasterCharacter()
 	Combat->SetIsReplicated(true); // 복제 구성 요소로 지정. 부품은 특별해서 등록이 필요 x
 
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
+	// 캡슐이 카메라를 가리지 않도록
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 }
 
 void AMyBlasterCharacter::BeginPlay()
