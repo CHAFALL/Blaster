@@ -72,5 +72,6 @@ public:
 	// 중첩 이벤트는 서버에서만 발동.
 	// 서버는 다른 클라가 장착한 무기에 가까이 가도 E 장착 Text가 뜨는 문제가 있는데 그걸 해결하기 위해 구의 충돌을 무력화할 것임.
 	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; }
-
+	// 무기 철창
+	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 };

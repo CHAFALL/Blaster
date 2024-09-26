@@ -38,6 +38,8 @@ private:
 	// 무기는 서버에서만 전송되니깐 서버에 설치된 장비만 복제되지 않겠지??
 	// 그것도 고려해야됨
 
+	class AWeapon* EquippedWeapon;
+
 	UPROPERTY(BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	bool bIsCrouched;
 
@@ -61,4 +63,9 @@ private:
 	float AO_Yaw;
 	UPROPERTY(BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
 	float AO_Pitch;
+
+	// 왼손의 위치를 FABRIK IK를 통해 자연스러워보이게 개선하고 싶다. (현재는 총보다 먼 위치에 손이 있음.)
+	// 총 종류에 따라서 다 조정을 해줘야 돼?? - 이 기술을 사용한다면 해결. (무기에 소켓 추가) (소켓에 손 놓기)
+	UPROPERTY(BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	FTransform LeftHandTransform;
 };
