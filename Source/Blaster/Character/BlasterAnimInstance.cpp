@@ -50,6 +50,9 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	const float Interp = FMath::FInterpTo(Lean, Target, DeltaTime, 6.f);
 	Lean = FMath::Clamp(Interp, -90.f, 90.f);
 
+	AO_Yaw = MyBlasterCharacter->GetAO_Yaw();
+	AO_Pitch = MyBlasterCharacter->GetAO_Pitch();
+
 	// anim 인스턴스에서 이 값을 계산해주는 것을 볼 수 있다. (복제에 대한 걱정이 없어도 됨.)
 	// 기본 목표 회전은 클라와 서버에 실제로 설정되어있고 이미 복제된 값을 사용하기 때문임.
 

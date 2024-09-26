@@ -54,4 +54,11 @@ private:
 	FRotator CharacterRotation;
 	FRotator DeltaRotation;
 
+
+	// NativeUpdateAnimation에서 이걸 할 수 있지만 캐릭터에 기능을 만들겠다.
+	// 그렇게 하면 변수를 설정함으로써 이 기능을 깔끔하게 유지할 수 있다.
+	UPROPERTY(BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	float AO_Yaw;
+	UPROPERTY(BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = "true"))
+	float AO_Pitch;
 };
