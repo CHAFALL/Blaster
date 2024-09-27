@@ -40,6 +40,9 @@ AMyBlasterCharacter::AMyBlasterCharacter()
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 
 	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+	// 복제 관련 주기?
+	NetUpdateFrequency = 66.f; // 총 게임은 주로 이렇게 씀. 서버 순 틱 비율은 ini파일에서 해야됨. 
+	MinNetUpdateFrequency = 33.f;
 }
 
 void AMyBlasterCharacter::BeginPlay()
