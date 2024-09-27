@@ -38,6 +38,7 @@ AMyBlasterCharacter::AMyBlasterCharacter()
 	// 캡슐이 카메라를 가리지 않도록
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+	GetCharacterMovement()->RotationRate = FRotator(0.f, 0.f, 850.f); // 회전속도 설정
 
 	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 	// 복제 관련 주기?
@@ -238,6 +239,18 @@ void AMyBlasterCharacter::AimOffset(float DeltaTime)
 		UE_LOG(LogTemp, Warning, TEXT("AO_Pitch: %f"), AO_Pitch);
 	}*/
 
+}
+
+void AMyBlasterCharacter::Jump()
+{
+	if (bIsCrouched)
+	{
+		UnCrouch();
+	}
+	else
+	{
+		Super::Jump();
+	}
 }
 
 void AMyBlasterCharacter::TurnInPlace(float DeltaTime)
