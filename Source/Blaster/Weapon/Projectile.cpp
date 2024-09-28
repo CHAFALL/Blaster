@@ -4,10 +4,14 @@
 #include "Weapon/Projectile.h"
 #include "Components/BoxComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Particles/ParticleSystemComponent.h"
+#include "Particles/ParticleSystem.h"
 
 AProjectile::AProjectile()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	bReplicates = true;
 
 	CollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionBox"));
 	SetRootComponent(CollisionBox);
@@ -29,6 +33,19 @@ void AProjectile::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	if (Tracer)
+	{
+		// 파티클 이펙트를 특정 액터에 부착하는 함수 (Tracer 이펙트를 생성하고, 그것을 CollisionBox라는 컴포넌트에 붙이고 있음.)
+		TracerComponent = UGameplayStatics::SpawnEmitterAttached(
+			Tracer,
+			CollisionBox,
+			FName(),
+			GetActorLocation(),
+			GetActorRotation(),
+			EAttachLocation::KeepWorldPosition
+		);
+	}
+
 }
 
 void AProjectile::Tick(float DeltaTime)

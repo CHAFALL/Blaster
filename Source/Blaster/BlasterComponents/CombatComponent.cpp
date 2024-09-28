@@ -84,7 +84,10 @@ void UCombatComponent::FireButtonPressed(bool bPressed)
 	// 멀티 캐스트로 해결하자!!
 	if (bFireButtonPressed)
 	{
-		ServerFire();
+		// Tick마다 추적하지 말고 쏠 때 호출을 받고 십자선 아래를 추적한 다음 ServerFire를 호출
+		FHitResult HitResult;
+		TraceUnderCrosshairs(HitResult);
+		ServerFire(HitResult.ImpactPoint);
 	}
 
 }
@@ -123,7 +126,7 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 			ECollisionChannel::ECC_Visibility
 		);
 		// 만약에 아무도 부딪히지 않았다면 충돌지점은 End로 처리
-		if (!TraceHitResult.bBlockingHit)
+		/*if (!TraceHitResult.bBlockingHit)
 		{
 			TraceHitResult.ImpactPoint = End;
 			HitTarget = End;
@@ -131,30 +134,23 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 		else
 		{
 			HitTarget = TraceHitResult.ImpactPoint;
-			DrawDebugSphere(
-				GetWorld(),
-				TraceHitResult.ImpactPoint,
-				12.f,
-				12,
-				FColor::Red
-			);
-		}
+		}*/
 	}
 }
 
 // 하지만 무기를 발사하는 것과 같은 중요한 건 서버에서 처리
-void UCombatComponent::ServerFire_Implementation()
+void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
 {
-	MulticastFire();
+	MulticastFire(TraceHitTarget);
 }
 
-void UCombatComponent::MulticastFire_Implementation()
+void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
 {
 	if (EquippedWeapon == nullptr) return;
 	if (Character)
 	{
 		Character->PlayFireMontage(bAiming);
-		EquippedWeapon->Fire(HitTarget);
+		EquippedWeapon->Fire(TraceHitTarget);
 	}
 }
 
@@ -164,9 +160,6 @@ void UCombatComponent::MulticastFire_Implementation()
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	
-	FHitResult HitResult;
-	TraceUnderCrosshairs(HitResult);
 }
 
 
