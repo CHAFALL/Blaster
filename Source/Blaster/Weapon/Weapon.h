@@ -71,6 +71,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	class UAnimationAsset* FireAnimation;
 
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class ACasing> CasingClass;
+
 public:
 	void SetWeaponState(EWeaponState State);
 	// 중첩 이벤트는 서버에서만 발동.
