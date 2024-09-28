@@ -17,6 +17,13 @@ UCombatComponent::UCombatComponent()
 	AimWalkSpeed = 450.f;
 }
 
+void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UCombatComponent, EquippedWeapon);
+	DOREPLIFETIME(UCombatComponent, bAiming);
+}
 
 void UCombatComponent::BeginPlay()
 {
@@ -68,15 +75,35 @@ void UCombatComponent::OnRep_EquippedWeapon()
 
 void UCombatComponent::FireButtonPressed(bool bPressed)
 {
-	bFireButtonPressed = bPressed;
+	bFireButtonPressed = bPressed; // 이건 클라이언트의 로컬에 설정해 놓았으므로 여기에 그대로 둠.
+	// 이렇게 하면 서버까진 제대로 동작, 클라까지 동작하게 하려고 bFireButtonPressed을 변수 복제하는 것이 쉬울꺼라
+	// 생각할 수 있는데 그러면 안됨. (서버가 true로 설정하면 클라도 true가 되잖아!) - 그래도 안되는 이유는 자동화 때문임
+	// 점화 버튼을 일정 기간 참조하게 해서 발사하므로 (즉시 반영이 안될 수 있음) , 왜냐? true에서 true는 값 변화가 없어서 반영이 안됨.
+	// 멀티 캐스트로 해결하자!!
+	if (bFireButtonPressed)
+	{
+		ServerFire();
+	}
 
+}
+
+// 하지만 무기를 발사하는 것과 같은 중요한 건 서버에서 처리
+void UCombatComponent::ServerFire_Implementation()
+{
+	MulticastFire();
+}
+
+void UCombatComponent::MulticastFire_Implementation()
+{
 	if (EquippedWeapon == nullptr) return;
-	if (Character && bFireButtonPressed)
+	if (Character)
 	{
 		Character->PlayFireMontage(bAiming);
 		EquippedWeapon->Fire();
 	}
 }
+
+
 
 
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -85,13 +112,7 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 }
 
-void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(UCombatComponent, EquippedWeapon);
-	DOREPLIFETIME(UCombatComponent, bAiming);
-}
 
 void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 {
