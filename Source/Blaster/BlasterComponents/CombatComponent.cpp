@@ -8,10 +8,12 @@
 #include "Components/SphereComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "DrawDebugHelpers.h"
 
 UCombatComponent::UCombatComponent()
 {
-	PrimaryComponentTick.bCanEverTick = false; // tick함수에서 무언가를 할 것이라는 것은 실제로 알고 있는 경우에만 하겠다.
+	PrimaryComponentTick.bCanEverTick = true; // tick함수에서 무언가를 할 것이라는 것은 실제로 알고 있는 경우에만 하겠다.
 
 	BaseWalkSpeed = 600.f;
 	AimWalkSpeed = 450.f;
@@ -87,6 +89,57 @@ void UCombatComponent::FireButtonPressed(bool bPressed)
 
 }
 
+void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
+{
+	FVector2D ViewportSize;
+	// 화면 중앙에서
+	if (GEngine && GEngine->GameViewport)
+	{
+		GEngine->GameViewport->GetViewportSize(ViewportSize);
+	}
+
+	FVector2D CrosshairLocation(ViewportSize.X / 2.f, ViewportSize.Y / 2.f);
+
+	// 화면에 주어진 정보를 3D 공간 좌표와 방향으로 변환
+	FVector CrosshairWorldPosition;
+	FVector CrosshairWorldDirection;
+	bool bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld(
+		UGameplayStatics::GetPlayerController(this, 0),
+		CrosshairLocation,
+		CrosshairWorldPosition,
+		CrosshairWorldDirection
+	);
+
+	if (bScreenToWorld)
+	{
+		FVector Start = CrosshairWorldPosition;
+
+		FVector End = Start + CrosshairWorldDirection * TRACE_LENGTH;
+
+		GetWorld()->LineTraceSingleByChannel(
+			TraceHitResult,
+			Start,
+			End,
+			ECollisionChannel::ECC_Visibility
+		);
+		// 만약에 아무도 부딪히지 않았다면 충돌지점은 End로 처리
+		if (!TraceHitResult.bBlockingHit)
+		{
+			TraceHitResult.ImpactPoint = End;
+		}
+		else
+		{
+			DrawDebugSphere(
+				GetWorld(),
+				TraceHitResult.ImpactPoint,
+				12.f,
+				12,
+				FColor::Red
+			);
+		}
+	}
+}
+
 // 하지만 무기를 발사하는 것과 같은 중요한 건 서버에서 처리
 void UCombatComponent::ServerFire_Implementation()
 {
@@ -109,7 +162,9 @@ void UCombatComponent::MulticastFire_Implementation()
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
+	
+	FHitResult HitResult;
+	TraceUnderCrosshairs(HitResult);
 }
 
 
