@@ -3,6 +3,7 @@
 
 #include "Weapon/Projectile.h"
 #include "Components/BoxComponent.h"
+#include "GameFramework/ProjectileMovementComponent.h"
 
 AProjectile::AProjectile()
 {
@@ -19,6 +20,9 @@ AProjectile::AProjectile()
 	// 벽이나 바닥 같은 정적 오브젝트와 충돌 가능.
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
 
+	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
+	// 속도에 맞춰 회전을 유지가능 (따라서 중력으로 인한 경로 구성의 회전이 해당 궤적을 따름)
+	ProjectileMovementComponent->bRotationFollowsVelocity = true;
 }
 
 void AProjectile::BeginPlay()
