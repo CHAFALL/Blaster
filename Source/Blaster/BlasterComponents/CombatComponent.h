@@ -36,6 +36,8 @@ protected:
 
 	void FireButtonPressed(bool bPressed);
 
+	void Fire();
+
 	UFUNCTION(Server, Reliable)
 	void ServerFire(const FVector_NetQuantize& TraceHitTarget ); // FVector를 이용해서 모든 숫자를 정수로 만듬 (직렬화) (많은 정보를 자를 수 있음)
 
@@ -95,6 +97,16 @@ private:
 	float ZoomInterpSpeed = 20.f;
 
 	void InterpFOV(float DeltaTime);
+
+	/**
+	* Automatic fire
+	*/
+
+	FTimerHandle FireTimer;
+	bool bCanFire = true;
+
+	void StartFireTimer();
+	void FireTimerFinished();
 
 public:	
 
