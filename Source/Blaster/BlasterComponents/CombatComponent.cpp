@@ -247,6 +247,10 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 			End,
 			ECollisionChannel::ECC_Visibility
 		);
+
+		if (!TraceHitResult.bBlockingHit) TraceHitResult.ImpactPoint = End; // 커뮤니티
+
+
 		// 만약에 아무도 부딪히지 않았다면 충돌지점은 End로 처리
 		/*if (!TraceHitResult.bBlockingHit)
 		{
@@ -257,6 +261,7 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 		{
 			HitTarget = TraceHitResult.ImpactPoint;
 		}*/
+		
 	}
 }
 
