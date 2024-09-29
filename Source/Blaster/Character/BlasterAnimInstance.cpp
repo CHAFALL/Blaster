@@ -92,7 +92,8 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 			FTransform RightHandTransform = MyBlasterCharacter->GetMesh()->GetSocketTransform(FName("hand_r"), ERelativeTransformSpace::RTS_World); // 커뮤 방식
 
 			// 오른쪽 뼈 위치에서 적중 대상까지의 회전을 살펴보자! (반대 방향으로 되어있어서 한번 더 뒤집음.)
-			RightHandRotation = UKismetMathLibrary::FindLookAtRotation(RightHandTransform.GetLocation(), RightHandTransform.GetLocation() + (RightHandTransform.GetLocation() - MyBlasterCharacter->GetHitTarget()));
+			FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(RightHandTransform.GetLocation(), RightHandTransform.GetLocation() + (RightHandTransform.GetLocation() - MyBlasterCharacter->GetHitTarget()));
+			RightHandRotation = FMath::RInterpTo(RightHandRotation, LookAtRotation, DeltaTime, 30.f);
 		}
 
 		// 어긋난 정도를 분석하기 위함

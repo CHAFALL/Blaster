@@ -39,6 +39,7 @@ AMyBlasterCharacter::AMyBlasterCharacter()
 	// 캡슐이 카메라를 가리지 않도록
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 0.f, 850.f); // 회전속도 설정
 
 	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
