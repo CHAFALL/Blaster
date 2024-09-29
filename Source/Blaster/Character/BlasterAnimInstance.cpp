@@ -83,6 +83,22 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 		// 뼈 공간에서 정확한 위치와 회전을 찾았으니 왼쪽 회전위치를 설정할 수 있음
 		LeftHandTransform.SetLocation(OutPosition);
 		LeftHandTransform.SetRotation(FQuat(OutRotation));
+
+
+		if (MyBlasterCharacter->IsLocallyControlled())
+		{
+			bLocallyControlled = true;
+			FTransform RightHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("Hand_R"), ERelativeTransformSpace::RTS_World);
+			// 오른쪽 뼈 위치에서 적중 대상까지의 회전을 살펴보자! (반대 방향으로 되어있어서 한번 더 뒤집음.)
+			RightHandRotation = UKismetMathLibrary::FindLookAtRotation(RightHandTransform.GetLocation(), RightHandTransform.GetLocation() + (RightHandTransform.GetLocation() - MyBlasterCharacter->GetHitTarget()));
+		}
+
+		// 어긋난 정도를 분석하기 위함
+		//FTransform MuzzleTipTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("MuzzleFlash"), ERelativeTransformSpace::RTS_World);
+		//FVector MuzzleX(FRotationMatrix(MuzzleTipTransform.GetRotation().Rotator()).GetUnitAxis(EAxis::X));
+		//DrawDebugLine(GetWorld(), MuzzleTipTransform.GetLocation(), MuzzleTipTransform.GetLocation() + MuzzleX * 1000.f, FColor::Red); // 총구 끝에서 직선으로
+		//DrawDebugLine(GetWorld(), MuzzleTipTransform.GetLocation(), MyBlasterCharacter->GetHitTarget(), FColor::Orange); // 총구 끝에서 조준선으로 가리킨 적중 대상까지
+
 	}
 }
 

@@ -362,5 +362,11 @@ AWeapon* AMyBlasterCharacter::GetEquippedWeapon()
 	return Combat->EquippedWeapon;
 }
 
+FVector AMyBlasterCharacter::GetHitTarget() const
+{
+	if (Combat == nullptr) return FVector(); // 빈 벡터 반환
+	return Combat->HitTarget;
+}
+
 
 
