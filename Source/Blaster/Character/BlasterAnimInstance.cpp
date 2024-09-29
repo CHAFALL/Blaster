@@ -36,6 +36,7 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	bIsCrouched = MyBlasterCharacter->bIsCrouched;
 	bAiming = MyBlasterCharacter->IsAiming();
 	TurningInPlace = MyBlasterCharacter->GetTurningInPlace();
+	bRotateRootBone = MyBlasterCharacter->ShouldRotateRootBone();
 
 	// 글로벌 기준임. (오른쪽으로 회전하면 180도까지 증가하다가 초과하면 -180에서부터 0으로)
 	// Offset Yaw for Strafing
