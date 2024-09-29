@@ -88,7 +88,9 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 		if (MyBlasterCharacter->IsLocallyControlled())
 		{
 			bLocallyControlled = true;
-			FTransform RightHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("Hand_R"), ERelativeTransformSpace::RTS_World);
+			/*FTransform RightHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("Hand_R"), ERelativeTransformSpace::RTS_World);*/
+			FTransform RightHandTransform = MyBlasterCharacter->GetMesh()->GetSocketTransform(FName("hand_r"), ERelativeTransformSpace::RTS_World); // 커뮤 방식
+
 			// 오른쪽 뼈 위치에서 적중 대상까지의 회전을 살펴보자! (반대 방향으로 되어있어서 한번 더 뒤집음.)
 			RightHandRotation = UKismetMathLibrary::FindLookAtRotation(RightHandTransform.GetLocation(), RightHandTransform.GetLocation() + (RightHandTransform.GetLocation() - MyBlasterCharacter->GetHitTarget()));
 		}
