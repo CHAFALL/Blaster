@@ -50,6 +50,18 @@ AMyBlasterCharacter::AMyBlasterCharacter()
 	MinNetUpdateFrequency = 33.f;
 }
 
+void AMyBlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	//복제할 OverlappingWeapon를 등록해야 하는 곳
+	//DOREPLIFETIME(AMyBlasterCharacter, OverlappingWeapon);
+	// 조건을 달아줄 수 있음. (이렇게 하면 서버에서는 볼 수 있지만 클라이언트에서는 해당하는 애만 볼 수 있음.)
+	// 알림 호출 위치를 잘 설정하면 서버에서도 안 보임.
+	DOREPLIFETIME_CONDITION(AMyBlasterCharacter, OverlappingWeapon, COND_OwnerOnly);
+	DOREPLIFETIME(AMyBlasterCharacter, Health);
+}
+
 void AMyBlasterCharacter::OnRep_ReplicatedMovement()
 {
 	Super::OnRep_ReplicatedMovement();
@@ -144,18 +156,6 @@ void AMyBlasterCharacter::PlayHitReactMontage()
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }
-
-void AMyBlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	//복제할 OverlappingWeapon를 등록해야 하는 곳
-	//DOREPLIFETIME(AMyBlasterCharacter, OverlappingWeapon);
-	// 조건을 달아줄 수 있음. (이렇게 하면 서버에서는 볼 수 있지만 클라이언트에서는 해당하는 애만 볼 수 있음.)
-	// 알림 호출 위치를 잘 설정하면 서버에서도 안 보임.
-	DOREPLIFETIME_CONDITION(AMyBlasterCharacter, OverlappingWeapon, COND_OwnerOnly);
-}
-
 
 
 void AMyBlasterCharacter::MoveForward(float Value)
@@ -423,6 +423,10 @@ void AMyBlasterCharacter::HideCameraIfCharacterClose()
 
 }
 
+
+void AMyBlasterCharacter::OnRep_Health()
+{
+}
 
 // 서버는 적용이 안되는 것을 보완하기 위한.
 // 클라이언트 측에서 추가 로직을 수행!!!!!!!
