@@ -14,10 +14,13 @@
 #include "Blaster/Blaster.h"
 #include "Blaster/PlayerController/BlasterPlayerController.h"
 #include "Blaster/GameMode/BlasterGameMode.h"
+#include "TimerManager.h"
 
 AMyBlasterCharacter::AMyBlasterCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	// 블루프린트에서 대신 해둠.
+	//SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn; // 스폰 때 충돌이 발생하면 다른 가능한 곳을 찾아서 반드시 스폰.
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(GetMesh()); // 캡슐이 아닌 그물방에 부착해 캡슐 크기를 바꿀 때 스프링 암의 높이에 영향을 끼치지 않게 함.
@@ -72,10 +75,31 @@ void AMyBlasterCharacter::OnRep_ReplicatedMovement()
 
 }
 
-void AMyBlasterCharacter::Elim_Implementation()
+// 서버 한정
+void AMyBlasterCharacter::Elim()
+{
+	MulticastElim();
+	GetWorldTimerManager().SetTimer(
+		ElimTimer,
+		this,
+		&AMyBlasterCharacter::ElimTimerFinished,
+		ElimDelay
+	);
+}
+
+void AMyBlasterCharacter::MulticastElim_Implementation()
 {
 	bElimmed = true;
 	PlayElimMontage();
+}
+
+void AMyBlasterCharacter::ElimTimerFinished()
+{
+	ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
+	if (BlasterGameMode)
+	{
+		BlasterGameMode->RequestRespawn(this, Controller);
+	}
 }
 
 void AMyBlasterCharacter::BeginPlay()
@@ -482,6 +506,8 @@ void AMyBlasterCharacter::UpdateHUDHealth()
 		BlasterPlayerController->SetHUDHealth(Health, MaxHealth);
 	}
 }
+
+
 
 // 서버는 적용이 안되는 것을 보완하기 위한.
 // 클라이언트 측에서 추가 로직을 수행!!!!!!!
