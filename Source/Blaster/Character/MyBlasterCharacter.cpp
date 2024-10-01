@@ -13,6 +13,7 @@
 #include "BlasterAnimInstance.h"
 #include "Blaster/Blaster.h"
 #include "Blaster/PlayerController/BlasterPlayerController.h"
+#include "Blaster/GameMode/BlasterGameMode.h"
 
 AMyBlasterCharacter::AMyBlasterCharacter()
 {
@@ -69,6 +70,12 @@ void AMyBlasterCharacter::OnRep_ReplicatedMovement()
 	SimProxiesTurn();
 	TimeSinceLastMovementReplication = 0.f;
 
+}
+
+void AMyBlasterCharacter::Elim_Implementation()
+{
+	bElimmed = true;
+	PlayElimMontage();
 }
 
 void AMyBlasterCharacter::BeginPlay()
@@ -152,6 +159,15 @@ void AMyBlasterCharacter::PlayFireMontage(bool bAiming)
 
 }
 
+void AMyBlasterCharacter::PlayElimMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && ElimMontage)
+	{
+		AnimInstance->Montage_Play(ElimMontage);
+	}
+}
+
 void AMyBlasterCharacter::PlayHitReactMontage()
 {
 	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
@@ -173,9 +189,19 @@ void AMyBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, cons
 	UpdateHUDHealth();
 	PlayHitReactMontage();
 
+	if (Health == 0.f)
+	{
+		// 현재 월드에서 권한이 있는 서버 인스턴스의 GameMode를 반환
+		ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
+		if (BlasterGameMode)
+		{
+			BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
+			ABlasterPlayerController* AttackerController = Cast<ABlasterPlayerController>(InstigatorController);
+			BlasterGameMode->PlayerEliminated(this, BlasterPlayerController, AttackerController);
+		}
+	}
+	
 }
-
-
 
 
 void AMyBlasterCharacter::MoveForward(float Value)
