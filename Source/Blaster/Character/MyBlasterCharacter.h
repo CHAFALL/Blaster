@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "Blaster/BlasterTypes/TurningInPlace.h"
 #include "Blaster/Interfaces/InteractWithCrosshairsInterface.h"
+#include "Components/TimelineComponent.h" // 헤더파일에서 구조 변수를 선언해야 되므로
 #include "MyBlasterCharacter.generated.h"
 
 UCLASS()
@@ -134,6 +135,32 @@ private:
 	float ElimDelay = 3.f; 
 
 	void ElimTimerFinished();
+
+	/**
+	* Dissolve effect
+	*/
+	
+	// 타임라인 구성요소
+	UPROPERTY(VisibleAnywhere)
+	UTimelineComponent* DissolveTimeline;
+	// DissolveTrack: 타임라인의 각 프레임에서 소멸 효과의 강도를 결정하는 콜백 함수, 타임라인에서 실행되며 소멸 값(0 ~ 1 사이의 값)을 전달
+	FOnTimelineFloat DissolveTrack;
+
+	UPROPERTY(EditAnywhere)
+	UCurveFloat* DissolveCurve;
+
+	// 타임라인 컴포넌트를 추가할 때마다 매 프레임마다 호출되는 콜백함수 필요.
+	UFUNCTION()
+	void UpdateDissolveMaterial(float DissolveValue);
+	void StartDissolve();
+
+	// Dynamic instance that we can change at runtime
+	UPROPERTY(VisibleAnywhere, Category = Elim)
+	UMaterialInstanceDynamic* DynamicDissolveMaterialInstance;
+
+	// Material instance set on the Blueprint, used with the dynamic material instance
+	UPROPERTY(EditAnywhere, Category = Elim)
+	UMaterialInstance* DissolveMaterialInstance;
 
 public:	
 	void SetOverlappingWeapon(AWeapon* Weapon);

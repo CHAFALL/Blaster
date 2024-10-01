@@ -53,6 +53,8 @@ AMyBlasterCharacter::AMyBlasterCharacter()
 	// 복제 관련 주기?
 	NetUpdateFrequency = 66.f; // 총 게임은 주로 이렇게 씀. 서버 순 틱 비율은 ini파일에서 해야됨. 
 	MinNetUpdateFrequency = 33.f;
+
+	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimelineComponent"));
 }
 
 void AMyBlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -91,6 +93,15 @@ void AMyBlasterCharacter::MulticastElim_Implementation()
 {
 	bElimmed = true;
 	PlayElimMontage();
+
+	if (DissolveMaterialInstance)
+	{
+		DynamicDissolveMaterialInstance = UMaterialInstanceDynamic::Create(DissolveMaterialInstance, this);
+		GetMesh()->SetMaterial(0, DynamicDissolveMaterialInstance);
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Dissolve"), 0.55f);
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Glow"), 200.f);
+	}
+	StartDissolve();
 }
 
 void AMyBlasterCharacter::ElimTimerFinished()
@@ -508,6 +519,25 @@ void AMyBlasterCharacter::UpdateHUDHealth()
 }
 
 
+
+void AMyBlasterCharacter::UpdateDissolveMaterial(float DissolveValue)
+{
+	if (DynamicDissolveMaterialInstance)
+	{
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Dissolve"), DissolveValue);
+	}
+}
+
+void AMyBlasterCharacter::StartDissolve()
+{
+	// 타임라인이 프레임마다 DissolveValue를 전달하고, 그 값에 따라 머티리얼의 "Dissolve" 파라미터가 업데이트
+	DissolveTrack.BindDynamic(this, &AMyBlasterCharacter::UpdateDissolveMaterial);
+	if (DissolveCurve && DissolveTimeline)
+	{
+		DissolveTimeline->AddInterpFloat(DissolveCurve, DissolveTrack);
+		DissolveTimeline->Play();
+	}
+}
 
 // 서버는 적용이 안되는 것을 보완하기 위한.
 // 클라이언트 측에서 추가 로직을 수행!!!!!!!
