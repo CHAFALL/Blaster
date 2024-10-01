@@ -70,11 +70,12 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
 	}*/
 
-	AMyBlasterCharacter* BlasterCharacter = Cast<AMyBlasterCharacter>(OtherActor);
+	// 멀티캐스팅 보단 값 복사방식이 더 좋으므로
+	/*AMyBlasterCharacter* BlasterCharacter = Cast<AMyBlasterCharacter>(OtherActor);
 	if (BlasterCharacter)
 	{
 		BlasterCharacter->MulticastHit();
-	}
+	}*/
 
 	Destroy();
 }

@@ -75,11 +75,13 @@ void AMyBlasterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	BlasterPlayerController = Cast<ABlasterPlayerController>(Controller);
-	if (BlasterPlayerController)
+	UpdateHUDHealth();
+	if (HasAuthority())
 	{
-		BlasterPlayerController->SetHUDHealth(Health, MaxHealth);
+		// 어떤 액터(Actor)가 데미지를 받을 때 호출되는 이벤트 (콜백 달아줌.)
+		OnTakeAnyDamage.AddDynamic(this, &AMyBlasterCharacter::ReceiveDamage);
 	}
+
 
 }
 
@@ -163,6 +165,17 @@ void AMyBlasterCharacter::PlayHitReactMontage()
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }
+
+void AMyBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
+{
+	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
+	// 서버에서만 실행됨. -> 클라도 챙겨주자 (OnRep_Health())
+	UpdateHUDHealth();
+	PlayHitReactMontage();
+
+}
+
+
 
 
 void AMyBlasterCharacter::MoveForward(float Value)
@@ -403,10 +416,6 @@ void AMyBlasterCharacter::TurnInPlace(float DeltaTime)
 	}
 }
 
-void AMyBlasterCharacter::MulticastHit_Implementation()
-{
-	PlayHitReactMontage();
-}
 
 void AMyBlasterCharacter::HideCameraIfCharacterClose()
 {
@@ -431,8 +440,21 @@ void AMyBlasterCharacter::HideCameraIfCharacterClose()
 }
 
 
+// 복사된 값에 대해
 void AMyBlasterCharacter::OnRep_Health()
 {
+	UpdateHUDHealth();
+	PlayHitReactMontage();
+
+}
+
+void AMyBlasterCharacter::UpdateHUDHealth()
+{
+	BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
+	if (BlasterPlayerController)
+	{
+		BlasterPlayerController->SetHUDHealth(Health, MaxHealth);
+	}
 }
 
 // 서버는 적용이 안되는 것을 보완하기 위한.
