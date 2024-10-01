@@ -12,6 +12,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "BlasterAnimInstance.h"
 #include "Blaster/Blaster.h"
+#include "Blaster/PlayerController/BlasterPlayerController.h"
 
 AMyBlasterCharacter::AMyBlasterCharacter()
 {
@@ -73,7 +74,13 @@ void AMyBlasterCharacter::OnRep_ReplicatedMovement()
 void AMyBlasterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	BlasterPlayerController = Cast<ABlasterPlayerController>(Controller);
+	if (BlasterPlayerController)
+	{
+		BlasterPlayerController->SetHUDHealth(Health, MaxHealth);
+	}
+
 }
 
 void AMyBlasterCharacter::Tick(float DeltaTime)
