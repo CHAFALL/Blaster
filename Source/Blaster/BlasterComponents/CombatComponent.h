@@ -54,9 +54,10 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void ServerReload();
-
 	// 서버와 클라에서 발생.
 	void HandleReload();
+	int32 AmountToReload();
+
 
 private:
 	UPROPERTY()
@@ -151,6 +152,8 @@ private:
 
 	UFUNCTION()
 	void OnRep_CombatState();
+
+	void UpdateAmmoValues();
 
 public:	
 
