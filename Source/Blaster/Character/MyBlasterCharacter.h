@@ -30,6 +30,7 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastElim();
+	virtual void Destroyed() override;
 protected:
 	virtual void BeginPlay() override;
 
@@ -161,6 +162,20 @@ private:
 	// Material instance set on the Blueprint, used with the dynamic material instance
 	UPROPERTY(EditAnywhere, Category = Elim)
 	UMaterialInstance* DissolveMaterialInstance;
+
+	/**
+	* Elim bot
+	*/
+
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* ElimBotEffect; // 에디터에서 파티클 효과를 지정할 수 있는 변수
+
+	// 이걸 변수로 저장하는 이유 - 캐릭터가 사라지자마자 제거하려고
+	UPROPERTY(VisibleAnywhere)
+	UParticleSystemComponent* ElimBotComponent; // 스폰된 파티클 컴포넌트의 인스턴스를 저장하는 변수 (파티클 시스템을 실제로 렌더링하는 컴포넌트)
+
+	UPROPERTY(EditAnywhere)
+	class USoundCue* ElimBotSound;
 
 public:	
 	void SetOverlappingWeapon(AWeapon* Weapon);
