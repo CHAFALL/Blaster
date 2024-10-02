@@ -172,7 +172,7 @@ void AMyBlasterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	UpdateHUDHealth();
+	UpdateHUDHealth(); // OnPossess를 하더라도 얘는 있어야 함.(게임이 시작되고 소유할 때 모든 HUD 요소가 유효하지는 않지만 HUD Health를 기억하고 설정)
 	if (HasAuthority())
 	{
 		// 어떤 액터(Actor)가 데미지를 받을 때 호출되는 이벤트 (콜백 달아줌.)
@@ -460,7 +460,7 @@ void AMyBlasterCharacter::SimProxiesTurn()
 	ProxyRotation = GetActorRotation();
 	ProxyYaw = UKismetMathLibrary::NormalizedDeltaRotator(ProxyRotation, ProxyRotationLastFrame).Yaw;
 
-	UE_LOG(LogTemp, Warning, TEXT("ProxyYaw: %f"), ProxyYaw);
+	//UE_LOG(LogTemp, Warning, TEXT("ProxyYaw: %f"), ProxyYaw);
 
 	if (FMath::Abs(ProxyYaw) > TurnThreshold)
 	{
