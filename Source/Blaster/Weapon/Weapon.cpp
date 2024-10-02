@@ -111,7 +111,7 @@ void AWeapon::SetHUDAmmo()
 // 매우 자주 호출 -> 그래서 변수 저장. (BlasterOwnerCharacter, BlasterOwnerController)
 void AWeapon::SpendRound() // 총을 쏠 때 시간을 보내야 됨.
 {
-	--Ammo;
+	Ammo = FMath::Clamp(Ammo - 1, 0, MagCapacity);
 	SetHUDAmmo();
 }
 
@@ -160,6 +160,7 @@ void AWeapon::SetWeaponState(EWeaponState State)
 		break;
 	}
 }
+
 
 void AWeapon::OnRep_WeaponState()
 {
@@ -226,7 +227,11 @@ void AWeapon::Dropped()
 	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
 	WeaponMesh->DetachFromComponent(DetachRules);
 	SetOwner(nullptr);
-	BlasterOwnerCharacter = nullptr; //
+	BlasterOwnerCharacter = nullptr; // 이거 해야 무기에 남은 총알 수로 갱신됨.
 	BlasterOwnerController = nullptr; // 
 }
 
+bool AWeapon::IsEmpty()
+{
+	return Ammo <= 0;
+}
