@@ -53,6 +53,10 @@ protected:
 	UFUNCTION()
 	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController, AActor* DamageCauser);
 	void UpdateHUDHealth();
+	// playerState는 첫번째 프레임에서 유효하지 않음.. (변수가 유효해 지려면 1,2 프레임이 걸림)
+	// 따라서 첫번째 프레임에서 초기화되지 않을 모든 클래스를 위한 틱 기능을 만들자!
+	// Poll for any relelvant classes and initialize our HUD
+	void PollInit();
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -176,6 +180,8 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	class USoundCue* ElimBotSound;
+
+	class ABlasterPlayerState* BlasterPlayerState;
 
 public:	
 	void SetOverlappingWeapon(AWeapon* Weapon);

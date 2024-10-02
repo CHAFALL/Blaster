@@ -18,6 +18,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "Blaster/PlayerState/BlasterPlayerState.h"
 
 AMyBlasterCharacter::AMyBlasterCharacter()
 {
@@ -201,7 +202,7 @@ void AMyBlasterCharacter::Tick(float DeltaTime)
 	}
 
 	HideCameraIfCharacterClose();
-
+	PollInit();
 }
 
 void AMyBlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -570,6 +571,18 @@ void AMyBlasterCharacter::UpdateHUDHealth()
 	if (BlasterPlayerController)
 	{
 		BlasterPlayerController->SetHUDHealth(Health, MaxHealth);
+	}
+}
+
+void AMyBlasterCharacter::PollInit()
+{
+	if (BlasterPlayerState == nullptr)
+	{
+		BlasterPlayerState = GetPlayerState<ABlasterPlayerState>();
+		if (BlasterPlayerState)
+		{
+			BlasterPlayerState->AddToScore(0.f); // 오호!
+		}
 	}
 }
 
