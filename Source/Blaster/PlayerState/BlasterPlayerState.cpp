@@ -4,10 +4,19 @@
 #include "PlayerState/BlasterPlayerState.h"
 #include "Blaster/Character/MyBlasterCharacter.h"
 #include "Blaster/PlayerController/BlasterPlayerController.h"
+#include "Net/UnrealNetwork.h"
+
+void ABlasterPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ABlasterPlayerState, Defeats);
+
+}
 
 void ABlasterPlayerState::AddToScore(float ScoreAmount)
 {
-	Score += ScoreAmount;
+	SetScore(GetScore() + ScoreAmount);
 	Character = Character == nullptr ? Cast<AMyBlasterCharacter>(GetPawn()) : Character;
 	if (Character)
 	{
@@ -15,9 +24,10 @@ void ABlasterPlayerState::AddToScore(float ScoreAmount)
 	}
 	if (Controller)
 	{
-		Controller->SetHUDScore(Score);
+		Controller->SetHUDScore(GetScore());
 	}
 }
+
 
 
 void ABlasterPlayerState::OnRep_Score()
@@ -32,7 +42,34 @@ void ABlasterPlayerState::OnRep_Score()
 	// 컨트롤러를 통해 HUD 접근 가능
 	if (Controller)
 	{
-		Controller->SetHUDScore(Score); // 복제된 값 사용.
+		Controller->SetHUDScore(GetScore()); // 복제된 값 사용.
+	}
+}
+
+void ABlasterPlayerState::AddToDefeats(int32 DefeatsAmount)
+{
+	Defeats += DefeatsAmount;
+	Character = Character == nullptr ? Cast<AMyBlasterCharacter>(GetPawn()) : Character;
+	if (Character)
+	{
+		Controller = Controller == nullptr ? Cast<ABlasterPlayerController>(Character->Controller) : Controller;
+	}
+	if (Controller)
+	{
+		Controller->SetHUDDefeats(Defeats);
+	}
+}
+
+void ABlasterPlayerState::OnRep_Defeats()
+{
+	Character = Character == nullptr ? Cast<AMyBlasterCharacter>(GetPawn()) : Character;
+	if (Character)
+	{
+		Controller = Controller == nullptr ? Cast<ABlasterPlayerController>(Character->Controller) : Controller;
+	}
+	if (Controller)
+	{
+		Controller->SetHUDDefeats(Defeats);
 	}
 }
 

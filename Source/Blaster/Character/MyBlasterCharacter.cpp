@@ -582,6 +582,7 @@ void AMyBlasterCharacter::PollInit()
 		if (BlasterPlayerState)
 		{
 			BlasterPlayerState->AddToScore(0.f); // 오호!
+			BlasterPlayerState->AddToDefeats(0);
 		}
 	}
 }

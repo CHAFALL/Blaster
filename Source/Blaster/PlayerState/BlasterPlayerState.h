@@ -15,12 +15,30 @@ class BLASTER_API ABlasterPlayerState : public APlayerState
 	GENERATED_BODY()
 
 public:
-	virtual void OnRep_Score() override; 
+	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
+	
+	/**
+	* Replication notifies
+	*/
+	virtual void OnRep_Score() override;
+
+	UFUNCTION()
+	virtual void OnRep_Defeats();
+	
 	void AddToScore(float ScoreAmount);
+	void AddToDefeats(int32 DefeatsAmount);
 
 private:
+	// 처음에 nullptr로 밀어주기 위해 = nullptr;로 해줘도 되고 언리얼 엔진에서는 새로운 속성을 주면 됨 (UPROPERTY())
+	UPROPERTY()
 	class AMyBlasterCharacter* Character;
+	UPROPERTY()
 	class ABlasterPlayerController* Controller;
+
+	// 점수(Score)는 기본 제공.
+
+	UPROPERTY(ReplicatedUsing = OnRep_Defeats)
+	int32 Defeats;
 	
 };
 
