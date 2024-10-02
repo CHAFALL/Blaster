@@ -132,6 +132,10 @@ void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& T
 void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 {
 	if (Character == nullptr || WeaponToEquip == nullptr) return;
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->Dropped();
+	}
 
 	EquippedWeapon = WeaponToEquip;
 	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
@@ -146,6 +150,7 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	// 하지만 장비를 장착하자마자 장비를 장착한 캐릭터에게 배정해야 됨.
 	// Go To Declaration해서 타서 들어가보면 주인이 복제 될 때 신고하는 기능이 있음을 알 수 있음.
 	EquippedWeapon->SetOwner(Character);
+	EquippedWeapon->SetHUDAmmo();
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
 }

@@ -27,6 +27,13 @@ public:
 	AWeapon();
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	// 클라에서 HUD 탄약을 설정하기 전에 해당 소유자에 액세스해서 컨트롤러를 가져와야 하므로
+	// 해당 소유자가 복제되었는지 확인해야 됨.
+	// 즉, 현재 우리는 소유자가 복제되기를 기다렸다가  HUD와 무기 상태를 설정할 수 없음..
+	// 소유자가 먼저 복제될지 무기 상태가 먼저 될 지 알 수 없음..
+	// -> 따라서 클라에서 실제로 HUD 탄약을 설정할 좋은 시점을 알아야 됨.
+	virtual void OnRep_Owner() override;
+	void SetHUDAmmo();
 	void ShowPickupWidget(bool bShowWidget);
 	virtual void Fire(const FVector& HitTarget);
 	void Dropped();
@@ -115,6 +122,22 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ACasing> CasingClass;
+
+	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Ammo)
+	int32 Ammo;
+
+	UFUNCTION()
+	void OnRep_Ammo();
+	
+	void SpendRound();
+
+	UPROPERTY(EditAnywhere)
+	int MagCapacity;
+
+	UPROPERTY()
+	class AMyBlasterCharacter* BlasterOwnerCharacter;
+	UPROPERTY()
+	class ABlasterPlayerController* BlasterOwnerController;
 
 public:
 	void SetWeaponState(EWeaponState State);

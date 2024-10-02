@@ -100,9 +100,13 @@ void AMyBlasterCharacter::Elim()
 
 void AMyBlasterCharacter::MulticastElim_Implementation()
 {
+	if (BlasterPlayerController)
+	{
+		BlasterPlayerController->SetHUDWeaponAmmo(0);
+	}
+
 	bElimmed = true;
 	PlayElimMontage();
-
 
 	// Start dissolve effect
 	if (DissolveMaterialInstance)
