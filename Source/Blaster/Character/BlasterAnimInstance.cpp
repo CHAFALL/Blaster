@@ -6,6 +6,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Blaster/Weapon/Weapon.h"
+#include "Blaster/BlasterTypes/CombatState.h"
 
 void UBlasterAnimInstance::NativeInitializeAnimation()
 {
@@ -105,5 +106,7 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 		//DrawDebugLine(GetWorld(), MuzzleTipTransform.GetLocation(), MyBlasterCharacter->GetHitTarget(), FColor::Orange); // 총구 끝에서 조준선으로 가리킨 적중 대상까지
 
 	}
+
+	bUseFABRIK = MyBlasterCharacter->GetCombatState() != ECombatState::ECS_Reloading;
 }
 

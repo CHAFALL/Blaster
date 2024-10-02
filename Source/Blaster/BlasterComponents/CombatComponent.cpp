@@ -14,6 +14,7 @@
 #include "Camera/CameraComponent.h"
 #include "TimerManager.h"
 
+
 UCombatComponent::UCombatComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true; // tick함수에서 무언가를 할 것이라는 것은 실제로 알고 있는 경우에만 하겠다.
@@ -28,6 +29,9 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(UCombatComponent, EquippedWeapon);
 	DOREPLIFETIME(UCombatComponent, bAiming);
+	DOREPLIFETIME_CONDITION(UCombatComponent, CarriedAmmo, COND_OwnerOnly); // 소유 클라에만 중요. (나중에 리로딩을 구현할 때 소유 클라만 적극적으로 리로딩 할 것임.)
+	DOREPLIFETIME(UCombatComponent, CombatState);
+
 }
 
 void UCombatComponent::BeginPlay()
@@ -42,6 +46,10 @@ void UCombatComponent::BeginPlay()
 		{
 			DefaultFOV = Character->GetFollowCamera()->FieldOfView;
 			CurrentFOV = DefaultFOV;
+		}
+		if (Character->HasAuthority())
+		{
+			InitializeCarriedAmmo();
 		}
 	}
 	
@@ -145,14 +153,70 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 		HandSocket->AttachActor(EquippedWeapon, Character->GetMesh());
 	}
 
-	// 무기 소유자가 캐릭터가 되었으면 함.
-	// 우리는 우리가 제어하고 있는 폰을 소유하고 있다고 말하지만, 무기와 같은 액터에는 정의된 소유자가 없음.
-	// 하지만 장비를 장착하자마자 장비를 장착한 캐릭터에게 배정해야 됨.
-	// Go To Declaration해서 타서 들어가보면 주인이 복제 될 때 신고하는 기능이 있음을 알 수 있음.
 	EquippedWeapon->SetOwner(Character);
 	EquippedWeapon->SetHUDAmmo();
+	
+	// 어느 총 타입인지 파악하고
+	if (CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
+	{
+		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
+	}
+
+	// 해당하는 총 타입의 총알 수 부여.
+	Controller = Controller == nullptr ? Cast<ABlasterPlayerController>(Character->Controller) : Controller;
+	if (Controller)
+	{
+		Controller->SetHUDCarriedAmmo(CarriedAmmo);
+	}
+
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
+}
+
+// 주의사항 - 클라나 서버에서 호출될 수 있음 -> 클라인 경우 모든 클라에게 다시 로드 애니메이션을 재생할 시간임을 알리기 전에 서버가 다시
+// 로드할 수 있는지 확인하도록 rpc를 서버로 보내야 됨.
+void UCombatComponent::Reload()
+{
+	// 보내기 전에 체크를 해서 대역폭을 아끼자.
+	if (CarriedAmmo > 0 && CombatState != ECombatState::ECS_Reloading)
+	{
+		ServerReload();
+	}
+}
+
+void UCombatComponent::ServerReload_Implementation()
+{
+	if (Character == nullptr) return;
+	CombatState = ECombatState::ECS_Reloading; //RPC 동작
+	HandleReload();
+	
+}
+
+void UCombatComponent::FinishReloading()
+{
+	if (Character == nullptr) return;
+	if (Character->HasAuthority())
+	{
+		CombatState = ECombatState::ECS_Unoccupied;
+
+	}
+
+}
+
+void UCombatComponent::OnRep_CombatState()
+{
+	switch (CombatState)
+	{
+	case ECombatState::ECS_Reloading:
+		HandleReload();
+		break;
+	}
+}
+
+
+void UCombatComponent::HandleReload()
+{
+	Character->PlayReloadMontage();
 }
 
 
@@ -229,17 +293,6 @@ void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 
 		}
 
-		// 만약에 아무도 부딪히지 않았다면 충돌지점은 End로 처리
-		/*if (!TraceHitResult.bBlockingHit)
-		{
-			TraceHitResult.ImpactPoint = End;
-			HitTarget = End;
-		}
-		else
-		{
-			HitTarget = TraceHitResult.ImpactPoint;
-		}*/
-
 	}
 }
 
@@ -314,6 +367,9 @@ void UCombatComponent::SetHUDCrosshairs(float DeltaTime)
 	}
 }
 
+
+
+
 void UCombatComponent::InterpFOV(float DeltaTime)
 {
 	if (EquippedWeapon == nullptr) return;
@@ -365,3 +421,20 @@ bool UCombatComponent::CanFire()
 	if (EquippedWeapon == nullptr) return false;
 	return !EquippedWeapon->IsEmpty() || !bCanFire; 
 }
+
+void UCombatComponent::OnRep_CarriedAmmo()
+{
+	Controller = Controller == nullptr ? Cast<ABlasterPlayerController>(Character->Controller) : Controller;
+	if (Controller)
+	{
+		Controller->SetHUDCarriedAmmo(CarriedAmmo);
+	}
+}
+
+void UCombatComponent::InitializeCarriedAmmo()
+{
+	// Add(): 항상 추가 또는 덮어쓰기. 키가 이미 존재해도 값을 덮어씀.
+	// Emplace() : 없을 때만 삽입.값이 있을 때는 덮어쓰지 않고, 필요할 때만 새 값을 생성하는 최적화가 가능.
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_AssaultRifle, StartingARAmmo);
+}
+

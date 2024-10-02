@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Blaster/HUD/BlasterHUD.h"
+#include "Blaster/Weapon/WeaponTypes.h"
+#include "Blaster/BlasterTypes/CombatState.h"
 #include "CombatComponent.generated.h"
 
 
@@ -23,7 +25,9 @@ public:
 
 
 	void EquipWeapon(class AWeapon* WeaponToEquip);
-
+	void Reload();
+	UFUNCTION(BlueprintCallable)
+	void FinishReloading();
 protected:
 	virtual void BeginPlay() override;
 	void SetAiming(bool bIsAiming);
@@ -47,6 +51,12 @@ protected:
 	void TraceUnderCrosshairs(FHitResult& TraceHitResult);
 
 	void SetHUDCrosshairs(float DeltaTime);
+
+	UFUNCTION(Server, Reliable)
+	void ServerReload();
+
+	// 서버와 클라에서 발생.
+	void HandleReload();
 
 private:
 	UPROPERTY()
@@ -113,7 +123,37 @@ private:
 
 	bool CanFire();
 
+	// 플레이어 상태를 유보하고픔 (플레이어 상태는 점수와 패배 같은 경우에 사용하고 전투component에서 탄약을 보관을 하고픔)
+	// playerState가 캐릭터보다 느리게 복제됨.
+	// 따라서 전투component에서 휴대 탄약이 있으면 복제가 더 빨리 발생하는 것을 볼 수 있음.
+	// Carried ammo for currently-equipped weapon
+	UPROPERTY(ReplicatedUsing = OnRep_CarriedAmmo)
+	int32 CarriedAmmo;
+
+	UFUNCTION()
+	void OnRep_CarriedAmmo();
+
+	// 왜 이렇게 만들고 복제하지 않았을까? -> TMap 타입은 복제할 수 x
+	// 해시함수 방식인데 해시 함수가 클라에서와 서버에서 반드시 동일한 결과를 제공하지는 않음.
+	// 하지만 특정 무기 유형에 대해 탄약 양이 변경될 때 전체 map을 복제하고 싶지 않기 때문에
+	// 현재 사용 중인 값만 복제하려고 함.
+	// 그냥 각 무기별 총알 수 저장하려는거 아냐?
+	// 서버에서만 사용할 것임 (CarriedAmmoMap)
+	TMap<EWeaponType, int32> CarriedAmmoMap;
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingARAmmo = 30;
+
+	void InitializeCarriedAmmo();
+
+	UPROPERTY(ReplicatedUsing = OnRep_CombatState)
+	ECombatState CombatState = ECombatState::ECS_Unoccupied;
+
+	UFUNCTION()
+	void OnRep_CombatState();
+
 public:	
 
-		
 };
+
+
