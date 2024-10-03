@@ -107,6 +107,10 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 
 	}
 
+	// 조건이 동일한데 따로 분리한 이유
+	// bUseFABRIK은 다른 것을 결정할 때 사용될 수 있으므로 (또 다른 상황이 발생하면 둘 중 하나에 영향을 미칠 수 있음)
 	bUseFABRIK = MyBlasterCharacter->GetCombatState() != ECombatState::ECS_Reloading;
+	bUseAimOffsets = MyBlasterCharacter->GetCombatState() != ECombatState::ECS_Reloading;
+	bTransformRightHand = MyBlasterCharacter->GetCombatState() != ECombatState::ECS_Reloading;
 }
 
