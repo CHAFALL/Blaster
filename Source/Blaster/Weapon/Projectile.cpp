@@ -60,23 +60,6 @@ void AProjectile::BeginPlay()
 // 이걸 클라에도 알려주고 싶어서 멀티캐스트를 이용할 수 있지만 이미 복제된 것을 이용하는 것이 더 좋다.
 void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	/*if (ImpactParticles)
-	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, GetActorTransform());
-	}
-
-	if (ImpactSound)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
-	}*/
-
-	// 멀티캐스팅 보단 값 복사방식이 더 좋으므로
-	/*AMyBlasterCharacter* BlasterCharacter = Cast<AMyBlasterCharacter>(OtherActor);
-	if (BlasterCharacter)
-	{
-		BlasterCharacter->MulticastHit();
-	}*/
-
 	Destroy();
 }
 

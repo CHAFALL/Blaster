@@ -507,8 +507,7 @@ void UCombatComponent::OnRep_CarriedAmmo()
 
 void UCombatComponent::InitializeCarriedAmmo()
 {
-	// Add(): 항상 추가 또는 덮어쓰기. 키가 이미 존재해도 값을 덮어씀.
-	// Emplace() : 없을 때만 삽입.값이 있을 때는 덮어쓰지 않고, 필요할 때만 새 값을 생성하는 최적화가 가능.
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_AssaultRifle, StartingARAmmo);
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_RocketLauncher, StartingRocketAmmo);
 }
 

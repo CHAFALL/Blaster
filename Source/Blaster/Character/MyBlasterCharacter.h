@@ -6,7 +6,7 @@
 #include "GameFramework/Character.h"
 #include "Blaster/BlasterTypes/TurningInPlace.h"
 #include "Blaster/Interfaces/InteractWithCrosshairsInterface.h"
-#include "Components/TimelineComponent.h" // 헤더파일에서 구조 변수를 선언해야 되므로
+#include "Components/TimelineComponent.h"
 #include "Blaster/BlasterTypes/CombatState.h"
 #include "MyBlasterCharacter.generated.h"
 

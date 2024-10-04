@@ -118,14 +118,13 @@ void AMyBlasterCharacter::MulticastElim_Implementation()
 	StartDissolve();
 
 	// Disable character movement
+	bDisableGameplay = true;
 	GetCharacterMovement()->DisableMovement();
 	if (Combat)
 	{
 		Combat->FireButtonPressed(false);
 	}
-
 	GetCharacterMovement()->StopMovementImmediately(); // 마우스를 통한 회전까지 막음
-	bDisableGameplay = true;
 	// Disable collision
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
