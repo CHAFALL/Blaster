@@ -6,6 +6,12 @@
 #include "GameFramework/GameMode.h"
 #include "BlasterGameMode.generated.h"
 
+// 사용자 지정 만들기
+namespace MatchState
+{
+	extern BLASTER_API const FName Cooldown; // Match duration has been reached. Display winner and begin cooldown timer.
+}
+
 /**
  * 
  */
@@ -26,6 +32,9 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	float MatchTime = 120.f;
 
+	UPROPERTY(EditDefaultsOnly)
+	float CooldownTime = 10.f;
+
 	float LevelStartingTime = 0.f;
 
 protected:
@@ -34,6 +43,8 @@ protected:
 
 private:
 	float CountdownTime = 0.f;
+public:
+	FORCEINLINE float GetCountdownTime() const { return CountdownTime; }
 };
 
 

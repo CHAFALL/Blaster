@@ -72,6 +72,8 @@ void AMyBlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	// 알림 호출 위치를 잘 설정하면 서버에서도 안 보임.
 	DOREPLIFETIME_CONDITION(AMyBlasterCharacter, OverlappingWeapon, COND_OwnerOnly);
 	DOREPLIFETIME(AMyBlasterCharacter, Health);
+	DOREPLIFETIME(AMyBlasterCharacter, bDisableGameplay);
+
 }
 
 void AMyBlasterCharacter::OnRep_ReplicatedMovement()
@@ -122,11 +124,7 @@ void AMyBlasterCharacter::MulticastElim_Implementation()
 	// Disable character movement
 	GetCharacterMovement()->DisableMovement();
 	GetCharacterMovement()->StopMovementImmediately(); // 마우스를 통한 회전까지 막음
-	if (BlasterPlayerController)
-	{
-		DisableInput(BlasterPlayerController);
-	}
-
+	bDisableGameplay = true;
 	// Disable collision
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -171,6 +169,10 @@ void AMyBlasterCharacter::Destroyed()
 	{
 		ElimBotComponent->DestroyComponent();
 	}
+	if (Combat && Combat->EquippedWeapon)
+	{
+		Combat->EquippedWeapon->Destroy();
+	}
 
 }
 
@@ -191,7 +193,18 @@ void AMyBlasterCharacter::BeginPlay()
 void AMyBlasterCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	RotateInPlace(DeltaTime);
+	HideCameraIfCharacterClose();
+	PollInit();
+}
 
+void AMyBlasterCharacter::RotateInPlace(float DeltaTime)
+{
+	if (bDisableGameplay)
+	{
+		bUseControllerRotationYaw = false;
+		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+	}
 	if (GetLocalRole() > ENetRole::ROLE_SimulatedProxy && IsLocallyControlled())
 	{
 		AimOffset(DeltaTime);
@@ -205,10 +218,8 @@ void AMyBlasterCharacter::Tick(float DeltaTime)
 		}
 		CalculateAO_Pitch();
 	}
-
-	HideCameraIfCharacterClose();
-	PollInit();
 }
+
 
 void AMyBlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -324,6 +335,7 @@ void AMyBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, cons
 
 void AMyBlasterCharacter::MoveForward(float Value)
 {
+	if (bDisableGameplay) return;
 	if (Controller != nullptr && Value != 0.f)
 	{
 		const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
@@ -334,6 +346,7 @@ void AMyBlasterCharacter::MoveForward(float Value)
 
 void AMyBlasterCharacter::MoveRight(float Value)
 {
+	if (bDisableGameplay) return;
 	if (Controller != nullptr && Value != 0.f)
 	{
 		const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
@@ -354,6 +367,7 @@ void AMyBlasterCharacter::LookUp(float Value)
 
 void AMyBlasterCharacter::EquipButtonPressed()
 {
+	if (bDisableGameplay) return;
 	// 누누이 말하지만 무기 관련된 것은 서버에서 다뤄야됨.
 	if (Combat)
 	{
@@ -365,9 +379,7 @@ void AMyBlasterCharacter::EquipButtonPressed()
 		{
 			ServerEquipButtonPressed();
 		}
-
 	}
-
 }
 
 void AMyBlasterCharacter::ServerEquipButtonPressed_Implementation()
@@ -381,6 +393,7 @@ void AMyBlasterCharacter::ServerEquipButtonPressed_Implementation()
 
 void AMyBlasterCharacter::CrouchButtonPressed()
 {
+	if (bDisableGameplay) return;
 	if (bIsCrouched)
 	{
 		UnCrouch();
@@ -393,6 +406,7 @@ void AMyBlasterCharacter::CrouchButtonPressed()
 
 void AMyBlasterCharacter::ReloadButtonPressed()
 {
+	if (bDisableGameplay) return;
 	if (Combat)
 	{
 		Combat->Reload();
@@ -401,6 +415,7 @@ void AMyBlasterCharacter::ReloadButtonPressed()
 
 void AMyBlasterCharacter::AimButtonPressed()
 {
+	if (bDisableGameplay) return;
 	if (Combat)
 	{
 		Combat->SetAiming(true);
@@ -409,6 +424,7 @@ void AMyBlasterCharacter::AimButtonPressed()
 
 void AMyBlasterCharacter::AimButtonReleased()
 {
+	if (bDisableGameplay) return;
 	if (Combat)
 	{
 		Combat->SetAiming(false);
@@ -519,6 +535,7 @@ void AMyBlasterCharacter::SimProxiesTurn()
 
 void AMyBlasterCharacter::Jump()
 {
+	if (bDisableGameplay) return;
 	if (bIsCrouched)
 	{
 		UnCrouch();
@@ -531,6 +548,7 @@ void AMyBlasterCharacter::Jump()
 
 void AMyBlasterCharacter::FireButtonPressed()
 {
+	if (bDisableGameplay) return;
 	if (Combat)
 	{
 		Combat->FireButtonPressed(true);
@@ -539,6 +557,7 @@ void AMyBlasterCharacter::FireButtonPressed()
 
 void AMyBlasterCharacter::FireButtonReleased()
 {
+	if (bDisableGameplay) return;
 	if (Combat)
 	{
 		Combat->FireButtonPressed(false);
@@ -621,7 +640,6 @@ void AMyBlasterCharacter::PollInit()
 		}
 	}
 }
-
 
 
 void AMyBlasterCharacter::UpdateDissolveMaterial(float DissolveValue)
