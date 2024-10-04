@@ -66,10 +66,6 @@ void AMyBlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	//복제할 OverlappingWeapon를 등록해야 하는 곳
-	//DOREPLIFETIME(AMyBlasterCharacter, OverlappingWeapon);
-	// 조건을 달아줄 수 있음. (이렇게 하면 서버에서는 볼 수 있지만 클라이언트에서는 해당하는 애만 볼 수 있음.)
-	// 알림 호출 위치를 잘 설정하면 서버에서도 안 보임.
 	DOREPLIFETIME_CONDITION(AMyBlasterCharacter, OverlappingWeapon, COND_OwnerOnly);
 	DOREPLIFETIME(AMyBlasterCharacter, Health);
 	DOREPLIFETIME(AMyBlasterCharacter, bDisableGameplay);
@@ -123,6 +119,11 @@ void AMyBlasterCharacter::MulticastElim_Implementation()
 
 	// Disable character movement
 	GetCharacterMovement()->DisableMovement();
+	if (Combat)
+	{
+		Combat->FireButtonPressed(false);
+	}
+
 	GetCharacterMovement()->StopMovementImmediately(); // 마우스를 통한 회전까지 막음
 	bDisableGameplay = true;
 	// Disable collision
@@ -169,7 +170,10 @@ void AMyBlasterCharacter::Destroyed()
 	{
 		ElimBotComponent->DestroyComponent();
 	}
-	if (Combat && Combat->EquippedWeapon)
+
+	ABlasterGameMode* BlasterGameMode = Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this));
+	bool bMatchNotInProgress = BlasterGameMode && BlasterGameMode->GetMatchState() != MatchState::InProgress;
+	if (Combat && Combat->EquippedWeapon && bMatchNotInProgress)
 	{
 		Combat->EquippedWeapon->Destroy();
 	}
