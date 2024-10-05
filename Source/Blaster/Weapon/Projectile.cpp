@@ -3,7 +3,6 @@
 
 #include "Weapon/Projectile.h"
 #include "Components/BoxComponent.h"
-#include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Particles/ParticleSystem.h"
@@ -28,9 +27,7 @@ AProjectile::AProjectile()
 	CollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
 	CollisionBox->SetCollisionResponseToChannel(ECC_SkeletalMesh, ECollisionResponse::ECR_Block);
 
-	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
-	// 속도에 맞춰 회전을 유지가능 (따라서 중력으로 인한 경로 구성의 회전이 해당 궤적을 따름)
-	ProjectileMovementComponent->bRotationFollowsVelocity = true;
+	
 }
 
 void AProjectile::BeginPlay()

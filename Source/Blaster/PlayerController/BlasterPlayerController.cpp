@@ -234,14 +234,14 @@ void ABlasterPlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
 void ABlasterPlayerController::SetHUDTime()
 {
 	// 커뮤
-	/*if (HasAuthority())
+	if (HasAuthority())
 	{
-		ABlasterGameMode* BlasterGameMode = Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this));
+		BlasterGameMode = BlasterGameMode == nullptr ? Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this)) : BlasterGameMode;
 		if (BlasterGameMode)
 		{
 			LevelStartingTime = BlasterGameMode->LevelStartingTime;
 		}
-	}*/
+	}
 
 	float TimeLeft = 0.f;
 	if (MatchState == MatchState::WaitingToStart) TimeLeft = WarmupTime - GetServerTime() + LevelStartingTime;

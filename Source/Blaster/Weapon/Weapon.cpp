@@ -18,6 +18,7 @@ AWeapon::AWeapon()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false; // 나중에 무기를 작동시켜야 한다고 결정하면 언제든 변경 가능.
 	bReplicates = true;
+	SetReplicateMovement(true); // 무기 위치 맞춰주기
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	SetRootComponent(WeaponMesh);
@@ -181,9 +182,6 @@ void AWeapon::OnRep_WeaponState()
 		break;
 	}
 }
-
-
-
 
 void AWeapon::ShowPickupWidget(bool bShowWidget)
 {

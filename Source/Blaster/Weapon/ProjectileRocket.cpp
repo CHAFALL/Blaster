@@ -10,12 +10,17 @@
 #include "NiagaraSystemInstanceController.h" // 커뮤
 #include "Sound/SoundCue.h"
 #include "Components/AudioComponent.h"
+#include "RocketMovementComponent.h"
 
 AProjectileRocket::AProjectileRocket()
 {
 	RocketMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Rocket Mesh"));
 	RocketMesh->SetupAttachment(RootComponent);
 	RocketMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	RocketMovementComponent = CreateDefaultSubobject<URocketMovementComponent>(TEXT("RocketMovementComponent"));
+	RocketMovementComponent->bRotationFollowsVelocity = true;
+	RocketMovementComponent->SetIsReplicated(true);
 }
 
 
@@ -70,6 +75,15 @@ void AProjectileRocket::DestroyTimerFinished()
 
 void AProjectileRocket::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
+	if (OtherActor == GetOwner()) // 버그를 막기 위한. - 해당 조건에 그냥 return을 때리면 그냥 로켓이 비행을 멈추는 증상이 생김.
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Hit self"));
+		return; 
+	}
+
+	// 이를 해결하기 위해 로켓이 명중해도 더 이상 이동을 멈추지 않는 로켓 전용 발사체 이동 구성 요소를 만들자!
+	// 또 다른 방법으로 로켓 발가시의 소켓을 더 앞으로 이동시켜서 로켓을 발사할 때 로켓 통에서 멀리 떨어지게 해서 해결하는 사람도 있음.
+
 	APawn* FiringPawn = GetInstigator();
 	if (FiringPawn && HasAuthority())
 	{
