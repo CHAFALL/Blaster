@@ -291,6 +291,9 @@ void AMyBlasterCharacter::PlayReloadMontage()
 		case EWeaponType::EWT_Pistol:
 			SectionName = FName("Rifle"); // 추후 변경 예정.
 			break;
+		case EWeaponType::EWT_SubmachineGun:
+			SectionName = FName("Rifle"); // 추후 변경 예정.
+			break;
 		}
 
 		AnimInstance->Montage_JumpToSection(SectionName);
