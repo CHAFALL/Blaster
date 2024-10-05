@@ -135,12 +135,6 @@ private:
 	UFUNCTION()
 	void OnRep_CarriedAmmo();
 
-	// 왜 이렇게 만들고 복제하지 않았을까? -> TMap 타입은 복제할 수 x
-	// 해시함수 방식인데 해시 함수가 클라에서와 서버에서 반드시 동일한 결과를 제공하지는 않음.
-	// 하지만 특정 무기 유형에 대해 탄약 양이 변경될 때 전체 map을 복제하고 싶지 않기 때문에
-	// 현재 사용 중인 값만 복제하려고 함.
-	// 그냥 각 무기별 총알 수 저장하려는거 아냐?
-	// 서버에서만 사용할 것임 (CarriedAmmoMap)
 	TMap<EWeaponType, int32> CarriedAmmoMap;
 
 	UPROPERTY(EditAnywhere)
