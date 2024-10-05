@@ -3,6 +3,13 @@
 
 #include "ProjectileRocket.h"
 #include "Kismet/GameplayStatics.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
+#include "Sound/SoundCue.h"
+#include "Components/BoxComponent.h"
+#include "NiagaraSystemInstanceController.h" // 커뮤
+#include "Sound/SoundCue.h"
+#include "Components/AudioComponent.h"
 
 AProjectileRocket::AProjectileRocket()
 {
@@ -11,15 +18,60 @@ AProjectileRocket::AProjectileRocket()
 	RocketMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
+
+void AProjectileRocket::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// 특이
+	if (!HasAuthority())
+	{
+		CollisionBox->OnComponentHit.AddDynamic(this, &AProjectileRocket::OnHit);
+	}
+
+	if (TrailSystem)
+	{
+		TrailSystemComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			TrailSystem,
+			GetRootComponent(),
+			FName(),
+			GetActorLocation(),
+			GetActorRotation(),
+			EAttachLocation::KeepWorldPosition,
+			false // auto destroy
+		);
+	}
+	if (ProjectileLoop && LoopingSoundAttenuation)
+	{
+		ProjectileLoopComponent = UGameplayStatics::SpawnSoundAttached(
+			ProjectileLoop,
+			GetRootComponent(),
+			FName(),
+			GetActorLocation(),
+			EAttachLocation::KeepWorldPosition,
+			false,
+			1.f, // 볼륨 증폭기
+			1.f,
+			0.f,
+			LoopingSoundAttenuation,
+			(USoundConcurrency*)nullptr,
+			false
+		);
+	}
+
+	// 위에서 단 소리는 로켓이 파괴될 때가 아니라 로켓이 명중할 때 멈추게 하고픔
+}
+
+void AProjectileRocket::DestroyTimerFinished()
+{
+	Destroy(); // 파괴 신호를 3초 늦춤
+}
+
+
 void AProjectileRocket::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	// Super를 호출하면 destroy가 실행되므로 호출 전에 데미지를 적용하고 싶지만, 로켓은 폭발물임.
-	// 따라서 단순히 피해 적용을 다른 액터에 직접 호출하는 대신 방사형 피해를 적용할 것임.
-	// 피해를 적용할 때 로켓을 발사한 플레이어의 컨트롤러가 필요
-	// 선동자와 소유자가 같다고 생각할 수 있는데 타워디펜스를 예를 들어서 설명하자면
-	// 소유자는 타워를 만든 플레이서, 선동자는 타워로 다를 수 있음.(참고)
 	APawn* FiringPawn = GetInstigator();
-	if (FiringPawn)
+	if (FiringPawn && HasAuthority())
 	{
 		AController* FiringController = FiringPawn->GetController();
 		if (FiringController)
@@ -40,6 +92,44 @@ void AProjectileRocket::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 		}
 	}
 
+	GetWorldTimerManager().SetTimer(
+		DestroyTimer,
+		this,
+		&AProjectileRocket::DestroyTimerFinished,
+		DestroyTime
+	);
 
-	Super::OnHit(HitComp, OtherActor, OtherComp, NormalImpulse, Hit);
+	if (ImpactParticles)
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, GetActorTransform());
+	}
+
+	if (ImpactSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
+	}
+	if (RocketMesh)
+	{
+		RocketMesh->SetVisibility(false);
+	}
+	if (CollisionBox)
+	{
+		CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+	// 생성 막기 - 커뮤
+	if (TrailSystemComponent && TrailSystemComponent->GetSystemInstanceController())
+	{
+		TrailSystemComponent->GetSystemInstanceController()->Deactivate();
+	}
+	if (ProjectileLoopComponent && ProjectileLoopComponent->IsPlaying())
+	{
+		ProjectileLoopComponent->Stop();
+	}
+
+	//Super::OnHit(HitComp, OtherActor, OtherComp, NormalImpulse, Hit); // 바로 파괴시키지 않겠다. (타이머로 시간 되면 파괴)
+	// 이걸로 안하니 Destroyed도 오버라이드 해서 설정해줘야 됨.
+}
+
+void AProjectileRocket::Destroyed()
+{
 }
