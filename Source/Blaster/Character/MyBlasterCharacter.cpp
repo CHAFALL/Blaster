@@ -148,6 +148,15 @@ void AMyBlasterCharacter::MulticastElim_Implementation()
 			GetActorLocation()
 		);
 	}
+	// 줌했을 때 죽는 경우를 대비
+	bool bHideSniperScope = IsLocallyControlled() &&
+		Combat && Combat->bAiming &&
+		Combat->EquippedWeapon &&
+		Combat->EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SniperRifle;
+	if (bHideSniperScope)
+	{
+		ShowSniperScopeWidget(false);
+	}
 
 }
 
@@ -295,6 +304,9 @@ void AMyBlasterCharacter::PlayReloadMontage()
 			SectionName = FName("Rifle"); // 추후 변경 예정.
 			break;
 		case EWeaponType::EWT_Shotgun:
+			SectionName = FName("Rifle"); // 추후 변경 예정.
+			break;
+		case EWeaponType::EWT_SniperRifle:
 			SectionName = FName("Rifle"); // 추후 변경 예정.
 			break;
 		}

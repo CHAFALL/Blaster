@@ -36,6 +36,10 @@ public:
 
 	UPROPERTY(Replicated)
 	bool bDisableGameplay = false;
+
+	//C++에서도 쉽게 할 수 있지만, 이건 완전 미용적인 기능이라 C++에서 이 위젯에 접근할 필요 x
+	UFUNCTION(BlueprintImplementableEvent) // 캐릭터 청사진에서 이를 구현 가능
+	void ShowSniperScopeWidget(bool bShowScope);
 protected:
 	virtual void BeginPlay() override;
 
