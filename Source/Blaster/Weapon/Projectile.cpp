@@ -9,6 +9,10 @@
 #include "Sound/SoundCue.h"
 #include "Blaster/Character/MyBlasterCharacter.h"
 #include "Blaster/Blaster.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
+
+
 
 AProjectile::AProjectile()
 {
@@ -54,10 +58,54 @@ void AProjectile::BeginPlay()
 
 }
 
+
+
 // 이걸 클라에도 알려주고 싶어서 멀티캐스트를 이용할 수 있지만 이미 복제된 것을 이용하는 것이 더 좋다.
 void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	Destroy();
+}
+
+void AProjectile::SpawnTrailSystem()
+{
+	if (TrailSystem)
+	{
+		TrailSystemComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			TrailSystem,
+			GetRootComponent(),
+			FName(),
+			GetActorLocation(),
+			GetActorRotation(),
+			EAttachLocation::KeepWorldPosition,
+			false // auto destroy
+		);
+	}
+}
+
+void AProjectile::ExplodeDamage()
+{
+	
+	APawn* FiringPawn = GetInstigator();
+	if (FiringPawn && HasAuthority())
+	{
+		AController* FiringController = FiringPawn->GetController();
+		if (FiringController)
+		{
+			UGameplayStatics::ApplyRadialDamageWithFalloff(
+				this, // World context object
+				Damage,
+				10.f, // 최소한의 데미지 (거리가 먼 경우)
+				GetActorLocation(), // Origin
+				DamageInnerRadius, // 내부 반지름
+				DamageOuterRadius, // 외부 반지름
+				1.f, // DamageFalloff
+				UDamageType::StaticClass(),
+				TArray<AActor*>(), // IgnoreActors 쏜 애도 피해를 입도록.
+				this, // DamageCauser
+				FiringController // InstigatorController
+			);
+		}
+	}
 }
 
 void AProjectile::Tick(float DeltaTime)
@@ -65,6 +113,22 @@ void AProjectile::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 }
+
+void AProjectile::StartDestroyTimer()
+{
+	GetWorldTimerManager().SetTimer(
+		DestroyTimer,
+		this,
+		&AProjectile::DestroyTimerFinished,
+		DestroyTime
+	);
+}
+
+void AProjectile::DestroyTimerFinished()
+{
+	Destroy(); // 파괴 신호를 3초 늦춤
+}
+
 
 void AProjectile::Destroyed()
 {
