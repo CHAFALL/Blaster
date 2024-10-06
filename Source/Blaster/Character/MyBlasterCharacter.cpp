@@ -295,22 +295,22 @@ void AMyBlasterCharacter::PlayReloadMontage()
 			SectionName = FName("Rifle");
 			break;
 		case EWeaponType::EWT_RocketLauncher:
-			SectionName = FName("Rifle"); // 추후 변경 예정.
+			SectionName = FName("RocketLauncher");
 			break;
 		case EWeaponType::EWT_Pistol:
-			SectionName = FName("Rifle"); // 추후 변경 예정.
+			SectionName = FName("Pistol"); 
 			break;
 		case EWeaponType::EWT_SubmachineGun:
-			SectionName = FName("Rifle"); // 추후 변경 예정.
+			SectionName = FName("Pistol");
 			break;
 		case EWeaponType::EWT_Shotgun:
-			SectionName = FName("Rifle"); // 추후 변경 예정.
+			SectionName = FName("Shotgun"); 
 			break;
 		case EWeaponType::EWT_SniperRifle:
-			SectionName = FName("Rifle"); // 추후 변경 예정.
+			SectionName = FName("SniperRifle");
 			break;
 		case EWeaponType::EWT_GrenadeLauncher:
-			SectionName = FName("Rifle"); // 추후 변경 예정.
+			SectionName = FName("GrenadeLauncher");
 			break;
 		}
 
