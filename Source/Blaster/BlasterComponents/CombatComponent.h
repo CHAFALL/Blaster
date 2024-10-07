@@ -35,6 +35,10 @@ public:
 
 	void JumpToShotgunEnd();
 
+	UFUNCTION(BlueprintCallable)
+	void ThrowGrenadeFinished();
+
+
 protected:
 	virtual void BeginPlay() override;
 	void SetAiming(bool bIsAiming);
@@ -62,6 +66,11 @@ protected:
 	// 서버와 클라에서 발생.
 	void HandleReload();
 	int32 AmountToReload();
+
+	void ThrowGrenade();
+
+	UFUNCTION(Server, Reliable)
+	void ServerThrowGrenade();
 
 
 private:

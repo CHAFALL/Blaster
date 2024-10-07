@@ -251,6 +251,7 @@ void AMyBlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AMyBlasterCharacter::FireButtonPressed);
 	PlayerInputComponent->BindAction("Fire", IE_Released, this, &AMyBlasterCharacter::FireButtonReleased);
 	PlayerInputComponent->BindAction("Reload", IE_Pressed, this, &AMyBlasterCharacter::ReloadButtonPressed);
+	PlayerInputComponent->BindAction("ThrowGrenade", IE_Pressed, this, &AMyBlasterCharacter::GrenadeButtonPressed);
 
 }
 
@@ -327,6 +328,15 @@ void AMyBlasterCharacter::PlayElimMontage()
 	}
 }
 
+void AMyBlasterCharacter::PlayThrowGrenadeMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && ThrowGrenadeMontage)
+	{
+		AnimInstance->Montage_Play(ThrowGrenadeMontage);
+	}
+}
+
 void AMyBlasterCharacter::PlayHitReactMontage()
 {
 	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
@@ -338,6 +348,14 @@ void AMyBlasterCharacter::PlayHitReactMontage()
 		// 몽타주 -> 올바른 섹션을 틀어줘야 됨.
 		FName SectionName("FromFront");
 		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
+void AMyBlasterCharacter::GrenadeButtonPressed()
+{
+	if (Combat)
+	{
+		Combat->ThrowGrenade();
 	}
 }
 

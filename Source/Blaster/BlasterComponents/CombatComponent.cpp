@@ -164,6 +164,8 @@ void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& T
 void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 {
 	if (Character == nullptr || WeaponToEquip == nullptr) return;
+	if (CombatState != ECombatState::ECS_Unoccupied) return;
+
 	if (EquippedWeapon)
 	{
 		EquippedWeapon->Dropped();
@@ -216,7 +218,7 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 void UCombatComponent::Reload()
 {
 	// 보내기 전에 체크를 해서 대역폭을 아끼자.
-	if (CarriedAmmo > 0 && CombatState != ECombatState::ECS_Reloading)
+	if (CarriedAmmo > 0 && CombatState == ECombatState::ECS_Unoccupied)
 	{
 		ServerReload();
 	}
@@ -257,6 +259,13 @@ void UCombatComponent::OnRep_CombatState()
 		if (bFireButtonPressed)
 		{
 			Fire();
+		}
+		break;
+	case ECombatState::ECS_ThrowingGrenade:
+		// 이미 로컬에선 실행을 했으므로.
+		if (Character && !Character->IsLocallyControlled())
+		{
+			Character->PlayThrowGrenadeMontage();
 		}
 		break;
 	}
@@ -317,6 +326,11 @@ void UCombatComponent::JumpToShotgunEnd()
 	}
 }
 
+void UCombatComponent::ThrowGrenadeFinished()
+{
+	CombatState = ECombatState::ECS_Unoccupied;
+}
+
 void UCombatComponent::HandleReload()
 {
 	Character->PlayReloadMontage();
@@ -335,6 +349,34 @@ int32 UCombatComponent::AmountToReload()
 	}
 
 	return 0;
+}
+
+
+// 로컬에서 발생
+void UCombatComponent::ThrowGrenade()
+{
+	if (CombatState != ECombatState::ECS_Unoccupied) return;
+	CombatState = ECombatState::ECS_ThrowingGrenade;
+	if (Character)
+	{
+		Character->PlayThrowGrenadeMontage();
+	}
+	// 서버에 알려주자!
+	// 서버도 ServerThrowGrenade() 호출할 수 있구나....헷갈림.
+	if (Character && !Character->HasAuthority())
+	{
+		ServerThrowGrenade();
+	}
+}
+
+// 서버에 알려줌 -> 상태가 변해서 OnRep 발동 -> OnRep쪽에 코드 추가
+void UCombatComponent::ServerThrowGrenade_Implementation()
+{
+	CombatState = ECombatState::ECS_ThrowingGrenade;
+	if (Character)
+	{
+		Character->PlayThrowGrenadeMontage();
+	}
 }
 
 
