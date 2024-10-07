@@ -16,6 +16,7 @@
 #include "Sound/SoundCue.h"
 #include "Blaster/Character/BlasterAnimInstance.h"
 #include "Blaster/Weapon/Projectile.h"
+#include "Components/BoxComponent.h"
 
 
 UCombatComponent::UCombatComponent()
@@ -376,24 +377,44 @@ void UCombatComponent::ThrowGrenadeFinished()
 void UCombatComponent::LaunchGrenade()
 {
 	ShowAttachedGrenade(false);
-	if (Character && Character->HasAuthority() && GrenadeClass && Character->GetAttachedGrenade())
+	if (Character && Character->IsLocallyControlled())
+	{
+		ServerLaunchGrenade(HitTarget);
+	}
+
+	// 방향 잡기 - HitTarget은 로컬로 계산, 따라서 서버가 수류탄을 발사하는 경우 
+	// 클라 제어 캐릭터에 대한 올바른 적중 대상이 없어서 문제 발생
+	// 즉, 클라에서 서버로 이 정보를 가져와야 됨. (ServerLaunchGrenade 이용.)
+	
+}
+
+// 커뮤 방식으로 변경 (움직일 시 몸에 부딪치지 않도록)
+void UCombatComponent::ServerLaunchGrenade_Implementation(const FVector_NetQuantize& Target)
+{
+	if (Character && GrenadeClass && Character->GetAttachedGrenade())
 	{
 		const FVector StartingLocation = Character->GetAttachedGrenade()->GetComponentLocation();
-		// 방향 잡기 - HitTarget은 로컬로 계산, 따라서 서버가 수류탄을 발사하는 경우 
-		// 클라 제어 캐릭터에 대한 올바른 적중 대상이 없어서 문제 발생
-		FVector ToTarget = HitTarget - StartingLocation;
+
+		FVector ToTarget = Target - StartingLocation;
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.Owner = Character;
 		SpawnParams.Instigator = Character; // 이걸 설정해야 방사를 함
 		UWorld* World = GetWorld();
 		if (World)
 		{
-			World->SpawnActor<AProjectile>(
+			// 수류탄 생성
+			AProjectile* Grenade = World->SpawnActor<AProjectile>(
 				GrenadeClass,
 				StartingLocation,
 				ToTarget.Rotation(),
 				SpawnParams
 			);
+
+			if (Grenade)
+			{
+				// 충돌 무시 설정
+				Grenade->CollisionBox->IgnoreActorWhenMoving(SpawnParams.Owner, true);
+			}
 		}
 	}
 }

@@ -38,8 +38,7 @@ protected:
 	UPROPERTY(EditAnywhere)
 	class USoundCue* ImpactSound;
 
-	UPROPERTY(EditAnywhere)
-	class UBoxComponent* CollisionBox;
+	
 
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* TrailSystem;
@@ -71,8 +70,10 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float DestroyTime = 3.f;
-public:	
 
+public:	
+	UPROPERTY(EditAnywhere)
+	class UBoxComponent* CollisionBox;
 };
 
 // 슈류탄에도 이와 같은 기술이 쓰일꺼라 로켓에서 Projectile로 이전 (타이머 관련된 것들.)
