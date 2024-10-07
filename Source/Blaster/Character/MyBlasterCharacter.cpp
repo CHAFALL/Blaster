@@ -60,6 +60,11 @@ AMyBlasterCharacter::AMyBlasterCharacter()
 	MinNetUpdateFrequency = 33.f;
 
 	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimelineComponent"));
+
+	AttachedGrenade = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Attached Grenade"));
+	AttachedGrenade->SetupAttachment(GetMesh(), FName("GrenadeSocket"));
+	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 }
 
 void AMyBlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -197,6 +202,10 @@ void AMyBlasterCharacter::BeginPlay()
 	{
 		// 어떤 액터(Actor)가 데미지를 받을 때 호출되는 이벤트 (콜백 달아줌.)
 		OnTakeAnyDamage.AddDynamic(this, &AMyBlasterCharacter::ReceiveDamage);
+	}
+	if (AttachedGrenade)
+	{
+		AttachedGrenade->SetVisibility(false);
 	}
 
 
