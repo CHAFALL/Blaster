@@ -72,6 +72,12 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void ServerThrowGrenade();
 
+	void DropEquippedWeapon();
+	void AttachActorToRightHand(AActor* ActorToAttach);
+	void AttachActorToLeftHand(AActor* ActorToAttach);
+	void UpdateCarriedAmmo();
+	void PlayEquipWeaponSound();
+	void ReloadEmptyWeapon();
 
 private:
 	UPROPERTY()
@@ -187,3 +193,5 @@ public:
 };
 
 
+// 수류탄을 던질 시에 무기는 오른손에 부착된 상태이다.
+// 이를 무기를 왼손에 부착하고 오른손에 다시 붙이는 식으로 변경할 것임.
