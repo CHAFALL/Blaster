@@ -31,6 +31,10 @@ AWeapon::AWeapon()
 	// 따라서 시작엔 무기 메쉬가 충돌을 비활성화하도록 하고 싶음.
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
+	WeaponMesh->MarkRenderStateDirty();
+	EnableCustomDepth(true);
+
 	AreaSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AreaSphere"));
 	AreaSphere->SetupAttachment(RootComponent);
 	// 서버에 있을 때만 구체가 overlapped 현상을 감지하게 하고 싶음. -> 권한 판별은 BeginPlay에서
@@ -39,6 +43,14 @@ AWeapon::AWeapon()
 
 	PickupWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("PickupWidget"));
 	PickupWidget->SetupAttachment(RootComponent);
+}
+
+void AWeapon::EnableCustomDepth(bool bEnable)
+{
+	if (WeaponMesh)
+	{
+		WeaponMesh->SetRenderCustomDepth(bEnable);
+	}
 }
 
 void AWeapon::BeginPlay()
@@ -160,6 +172,7 @@ void AWeapon::SetWeaponState(EWeaponState State)
 			WeaponMesh->SetEnableGravity(true);
 			WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 		}
+		EnableCustomDepth(false);
 		break;
 	case EWeaponState::EWS_Dropped:
 		if (HasAuthority())
@@ -174,6 +187,9 @@ void AWeapon::SetWeaponState(EWeaponState State)
 		WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 		// 누군가가 무기를 장착하려 하면 손의 소켓에 부착이 될텐데 물리학이 여전히 활성화되어 있으면 작동 x
 		// 따라서 무기를 장착하기 전에 장착된 무기 상태 설정을 호출하고 여기에서 물리 및 충돌 비활성화를 다시 처리해줘야 됨.
+		WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
+		WeaponMesh->MarkRenderStateDirty();
+		EnableCustomDepth(true);
 		break;
 	}
 }
@@ -194,6 +210,7 @@ void AWeapon::OnRep_WeaponState()
 			WeaponMesh->SetEnableGravity(true);
 			WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 		}
+		EnableCustomDepth(false);
 		break;
 	case EWeaponState::EWS_Dropped:
 		WeaponMesh->SetSimulatePhysics(true); // 땅에 닿고 튕겨나오게 하려고
@@ -202,8 +219,9 @@ void AWeapon::OnRep_WeaponState()
 		WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 		WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 		WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
-		// 누군가가 무기를 장착하려 하면 손의 소켓에 부착이 될텐데 물리학이 여전히 활성화되어 있으면 작동 x
-		// 따라서 무기를 장착하기 전에 장착된 무기 상태 설정을 호출하고 여기에서 물리 및 충돌 비활성화를 다시 처리해줘야 됨.
+		WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
+		WeaponMesh->MarkRenderStateDirty();
+		EnableCustomDepth(true);
 		break;
 	}
 }
