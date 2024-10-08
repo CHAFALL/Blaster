@@ -19,8 +19,6 @@ public:
 	AMyBlasterCharacter();
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	// 변수 복제를 하는 모든 클래스에서 재정의해야만 하는 함수.
-	// Replicated 프로퍼티가 복제되도록 Unreal의 네트워크 시스템에 알려주는 역할을 합니다.
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
 	void PlayFireMontage(bool bAiming);
@@ -41,6 +39,9 @@ public:
 	//C++에서도 쉽게 할 수 있지만, 이건 완전 미용적인 기능이라 C++에서 이 위젯에 접근할 필요 x
 	UFUNCTION(BlueprintImplementableEvent) // 캐릭터 청사진에서 이를 구현 가능
 	void ShowSniperScopeWidget(bool bShowScope);
+
+	void UpdateHUDHealth();
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -64,7 +65,6 @@ protected:
 
 	UFUNCTION()
 	void ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, class AController* InstigatorController, AActor* DamageCauser);
-	void UpdateHUDHealth();
 	// playerState는 첫번째 프레임에서 유효하지 않음.. (변수가 유효해 지려면 1,2 프레임이 걸림)
 	// 따라서 첫번째 프레임에서 초기화되지 않을 모든 클래스를 위한 틱 기능을 만들자!
 	// Poll for any relelvant classes and initialize our HUD
@@ -93,6 +93,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UCombatComponent* Combat;
+
+	UPROPERTY(VisibleAnywhere)
+	class UBuffComponent* Buff;
 
 	// RPC -> Server : 클라가 서버를 호출하는 느낌.
 	// Client : 서버가 클라이언트에게 할 것 토스하는 느낌.
@@ -150,8 +153,9 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_Health, VisibleAnywhere, Category = "Player Stats")
 	float Health = 100.f;
 
+	// 이제 타격을 받는 것 뿐 아니라 힐을 받는 것이 추가되어 수정 필요!
 	UFUNCTION()
-	void OnRep_Health();
+	void OnRep_Health(float LastHealth);
 
 	UPROPERTY()
 	class ABlasterPlayerController* BlasterPlayerController;
@@ -229,10 +233,12 @@ public:
 	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; } // 회전 여부를 변수로 관리
 	FORCEINLINE bool IsElimmed() const { return bElimmed; }
 	FORCEINLINE float GetHealth() const { return Health; }
+	FORCEINLINE void SetHealth(float Amount) { Health = Amount; }
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 	ECombatState GetCombatState() const;
 	FORCEINLINE UCombatComponent* GetCombat() const { return Combat; }
 	FORCEINLINE bool GetDisableGameplay() const { return bDisableGameplay; }
 	FORCEINLINE UAnimMontage* GetReloadMontage() const { return ReloadMontage; }
 	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const { return AttachedGrenade; }
+	FORCEINLINE UBuffComponent* GetBuff() const { return Buff; }
 };

@@ -15,7 +15,6 @@ class BLASTER_API AAmmoPickup : public APickup
 {
 	GENERATED_BODY()
 protected:
-
 	virtual void OnSphereOverlap(
 		UPrimitiveComponent* OverlappedComponent, 
 		AActor* OtherActor, 

@@ -8,6 +8,7 @@
 #include "Net/UnrealNetwork.h" // 복제 관련
 #include "Blaster/Weapon/Weapon.h"
 #include "Blaster/BlasterComponents/CombatComponent.h"
+#include "Blaster/BlasterComponents/BuffComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "BlasterAnimInstance.h"
@@ -45,6 +46,9 @@ AMyBlasterCharacter::AMyBlasterCharacter()
 	Combat = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	// Combat을 통해 우리 캐릭터의 모든 전투 관련 기능을 처리할 것이다. 즉, 전투 구성 요소에 복제될 변수가 있다는 의미!
 	Combat->SetIsReplicated(true); // 복제 구성 요소로 지정. 부품은 특별해서 등록이 필요 x
+
+	Buff = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
+	Buff->SetIsReplicated(true);
 
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	// 캡슐이 카메라를 가리지 않도록
@@ -264,12 +268,19 @@ void AMyBlasterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 
 }
 
+// 액터에 연결된 컴포넌트가 초기화된 후 추가 설정이나 초기화가 필요할 때 PostInitializeComponents에서 처리
+// BeginPlay보다 먼저 호출되며, 주로 컴포넌트들이 완료된 상태에서 액터 레벨의 추가적인 설정을 할 때 유용
 void AMyBlasterCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
+	// 얘네는 friend class로 만들어져 있어서 setter 없이 바로 가능 
 	if (Combat)
 	{
 		Combat->Character = this;
+	}
+	if (Buff)
+	{
+		Buff->Character = this;
 	}
 }
 
@@ -670,10 +681,15 @@ void AMyBlasterCharacter::HideCameraIfCharacterClose()
 
 
 // 복사된 값에 대해
-void AMyBlasterCharacter::OnRep_Health()
+// OnRep 함수에 매개변수를 추가하면, 복제 이전의 값을 자동으로 전달받을 수 있다.
+// 즉, LastHealth는 복제되기 전의 이전 Health 값이다.
+void AMyBlasterCharacter::OnRep_Health(float LastHealth)
 {
 	UpdateHUDHealth();
-	PlayHitReactMontage();
+	if (Health < LastHealth)
+	{
+		PlayHitReactMontage();
+	}
 
 }
 
