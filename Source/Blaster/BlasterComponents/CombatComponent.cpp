@@ -35,6 +35,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(UCombatComponent, bAiming);
 	DOREPLIFETIME_CONDITION(UCombatComponent, CarriedAmmo, COND_OwnerOnly); // 소유 클라에만 중요. (나중에 리로딩을 구현할 때 소유 클라만 적극적으로 리로딩 할 것임.)
 	DOREPLIFETIME(UCombatComponent, CombatState);
+	DOREPLIFETIME(UCombatComponent, Grenades);
 
 }
 
@@ -76,14 +77,9 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 void UCombatComponent::FireButtonPressed(bool bPressed)
 {
-	bFireButtonPressed = bPressed; // 이건 클라이언트의 로컬에 설정해 놓았으므로 여기에 그대로 둠.
-	// 이렇게 하면 서버까진 제대로 동작, 클라까지 동작하게 하려고 bFireButtonPressed을 변수 복제하는 것이 쉬울꺼라
-	// 생각할 수 있는데 그러면 안됨. (서버가 true로 설정하면 클라도 true가 되잖아!) - 그래도 안되는 이유는 자동화 때문임
-	// 점화 버튼을 일정 기간 참조하게 해서 발사하므로 (즉시 반영이 안될 수 있음) , 왜냐? true에서 true는 값 변화가 없어서 반영이 안됨.
-	// 멀티 캐스트로 해결하자!!
+	bFireButtonPressed = bPressed; 
 	if (bFireButtonPressed)
 	{
-		// Tick마다 추적하지 말고 쏠 때 호출을 받고 십자선 아래를 추적한 다음 ServerFire를 호출
 		Fire();
 	}
 
@@ -358,6 +354,12 @@ void UCombatComponent::UpdateShotgunAmmoValues()
 	}
 }
 
+void UCombatComponent::OnRep_Grenades()
+{
+	UpdateHUDGrenades();
+}
+
+
 void UCombatComponent::JumpToShotgunEnd()
 {
 	// Jump to ShotgunEnd section
@@ -443,6 +445,7 @@ int32 UCombatComponent::AmountToReload()
 // 로컬에서 발생
 void UCombatComponent::ThrowGrenade()
 {
+	if (Grenades == 0) return;
 	if (CombatState != ECombatState::ECS_Unoccupied || EquippedWeapon == nullptr) return;
 	CombatState = ECombatState::ECS_ThrowingGrenade;
 	if (Character)
@@ -457,11 +460,17 @@ void UCombatComponent::ThrowGrenade()
 	{
 		ServerThrowGrenade();
 	}
+	if (Character && Character->HasAuthority())
+	{
+		Grenades = FMath::Clamp(Grenades - 1, 0, MaxGrenades);
+		UpdateHUDGrenades();
+	}
 }
 
 // 서버에 알려줌 -> 상태가 변해서 OnRep 발동 -> OnRep쪽에 코드 추가
 void UCombatComponent::ServerThrowGrenade_Implementation()
 {
+	if (Grenades == 0) return;
 	CombatState = ECombatState::ECS_ThrowingGrenade;
 	if (Character)
 	{
@@ -469,7 +478,19 @@ void UCombatComponent::ServerThrowGrenade_Implementation()
 		AttachActorToLeftHand(EquippedWeapon);
 		ShowAttachedGrenade(true);
 	}
+	Grenades = FMath::Clamp(Grenades - 1, 0, MaxGrenades);
+	UpdateHUDGrenades();
 }
+
+void UCombatComponent::UpdateHUDGrenades()
+{
+	Controller = Controller == nullptr ? Cast<ABlasterPlayerController>(Character->Controller) : Controller;
+	if (Controller)
+	{
+		Controller->SetHUDGrenades(Grenades);
+	}
+}
+
 
 void UCombatComponent::ShowAttachedGrenade(bool bShowGrenade)
 {

@@ -370,6 +370,7 @@ void AMyBlasterCharacter::GrenadeButtonPressed()
 
 void AMyBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
+	if (bElimmed) return;
 	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
 	// 서버에서만 실행됨. -> 클라도 챙겨주자 (OnRep_Health())
 	UpdateHUDHealth();

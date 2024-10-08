@@ -76,4 +76,4 @@ public:
 	class UBoxComponent* CollisionBox;
 };
 
-// 슈류탄에도 이와 같은 기술이 쓰일꺼라 로켓에서 Projectile로 이전 (타이머 관련된 것들.)
+// 수류탄에도 이와 같은 기술이 쓰일꺼라 로켓에서 Projectile로 이전 (타이머 관련된 것들.)
