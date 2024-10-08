@@ -39,6 +39,22 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 }
 
+void UCombatComponent::PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount)
+{
+	if (CarriedAmmoMap.Contains(WeaponType))
+	{
+		CarriedAmmoMap[WeaponType] = FMath::Clamp(CarriedAmmoMap[WeaponType] + AmmoAmount, 0, MaxCarriedAmmo);
+	}
+	UpdateCarriedAmmo();
+	// 현재 끼고 있는 무기와 같은 타입이라면 HUD 업데이트 (UpdateCarriedAmmo 알아서 해줌)
+
+	// 현재 끼고 있는 무기에 장전할 총알이 없었는데 해당 총알을 먹은 경우 자동 장전 처리
+	if (EquippedWeapon && EquippedWeapon->IsEmpty() && EquippedWeapon->GetWeaponType() == WeaponType)
+	{
+		Reload();
+	}
+}
+
 void UCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();
