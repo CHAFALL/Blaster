@@ -49,6 +49,11 @@ private:
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* PickupEffect;
 
+	FTimerHandle BindOverlapTimer;
+	float BindOverlapTime = 0.25f;
+	// 이렇게 하면 캐릭터와 겹쳤을 때 픽업트럭이 즉시 파괴되지 않음. (스폰될 때 충돌이 발생하지 않으므로)
+	void BindOverlapTimerFinished();
+
 public:	
 
 };
