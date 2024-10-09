@@ -90,7 +90,10 @@ void ABlasterPlayerController::OnPossess(APawn* InPawn)
 	AMyBlasterCharacter* BlasterCharacter = Cast<AMyBlasterCharacter>(InPawn);
 	if (BlasterCharacter)
 	{
+		
 		SetHUDHealth(BlasterCharacter->GetHealth(), BlasterCharacter->GetMaxHealth());
+		// 커뮤 - 죽고 태어났을 때 초기화 안되는 문제 해결법
+		SetHUDShield(BlasterCharacter->GetShield(), BlasterCharacter->GetMaxShield());
 	}
 }
 
@@ -112,9 +115,33 @@ void ABlasterPlayerController::SetHUDHealth(float Health, float MaxHealth)
 	}
 	else
 	{
-		bInitializeCharacterOverlay = true;
+		bInitializeHealth = true;
 		HUDHealth = Health;
 		HUDMaxHealth = MaxHealth;
+	}
+}
+
+void ABlasterPlayerController::SetHUDShield(float Shield, float MaxShield)
+{
+	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+
+	bool bHUDValid = BlasterHUD &&
+		BlasterHUD->CharacterOverlay &&
+		BlasterHUD->CharacterOverlay->ShieldBar &&
+		BlasterHUD->CharacterOverlay->ShieldText;
+	if (bHUDValid)
+	{
+		const float ShieldPercent = Shield / MaxShield;
+		BlasterHUD->CharacterOverlay->ShieldBar->SetPercent(ShieldPercent);
+		FString ShieldText = FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(Shield), FMath::CeilToInt(MaxShield));
+		BlasterHUD->CharacterOverlay->ShieldText->SetText(FText::FromString(ShieldText));
+	}
+	// 캐릭터 오버레이가 초기화되기 전에 너무 일찍 호출하려고 시도하는 경우에 대비해서 값 저장해둠.
+	else
+	{
+		bInitializeShield = true;
+		HUDShield = Shield;
+		HUDMaxShield = MaxShield;
 	}
 }
 
@@ -132,7 +159,7 @@ void ABlasterPlayerController::SetHUDScore(float Score)
 	}
 	else
 	{
-		bInitializeCharacterOverlay = true;
+		bInitializeScore = true;
 		HUDScore = Score;
 	}
 }
@@ -151,7 +178,7 @@ void ABlasterPlayerController::SetHUDDefeats(int32 Defeats)
 	}
 	else
 	{
-		bInitializeCharacterOverlay = true;
+		bInitializeDefeats = true;
 		HUDDefeats = Defeats;
 	}
 }
@@ -246,6 +273,7 @@ void ABlasterPlayerController::SetHUDGrenades(int32 Grenades)
 	// 캐릭터 오버레이가 가장 늦게 초기화 되므로.
 	else
 	{
+		bInitializeGrenades = true;
 		HUDGrenades = Grenades;
 	}
 }
@@ -302,14 +330,16 @@ void ABlasterPlayerController::PollInit()
 			CharacterOverlay = BlasterHUD->CharacterOverlay;
 			if (CharacterOverlay)
 			{
-				SetHUDHealth(HUDHealth, HUDMaxHealth);
-				SetHUDScore(HUDScore);
-				SetHUDDefeats(HUDDefeats);
+				// 이렇게 초기화 여부를 다 따로 해줘야 일부만 초기화하는 버그를 해결 가능!
+				if (bInitializeHealth) SetHUDHealth(HUDHealth, HUDMaxHealth);
+				if (bInitializeShield) SetHUDShield(HUDShield, HUDMaxShield);
+				if (bInitializeScore) SetHUDScore(HUDScore);
+				if (bInitializeDefeats) SetHUDDefeats(HUDDefeats);
 
 				AMyBlasterCharacter* BlasterCharacter = Cast<AMyBlasterCharacter>(GetPawn());
 				if (BlasterCharacter && BlasterCharacter->GetCombat())
 				{
-					SetHUDGrenades(BlasterCharacter->GetCombat()->GetGrenades());
+					if (bInitializeGrenades) SetHUDGrenades(BlasterCharacter->GetCombat()->GetGrenades());
 				}
 			}
 		}

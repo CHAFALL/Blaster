@@ -77,6 +77,7 @@ void AMyBlasterCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 
 	DOREPLIFETIME_CONDITION(AMyBlasterCharacter, OverlappingWeapon, COND_OwnerOnly);
 	DOREPLIFETIME(AMyBlasterCharacter, Health);
+	DOREPLIFETIME(AMyBlasterCharacter, Shield);
 	DOREPLIFETIME(AMyBlasterCharacter, bDisableGameplay);
 
 }
@@ -201,7 +202,8 @@ void AMyBlasterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	UpdateHUDHealth(); // OnPossess를 하더라도 얘는 있어야 함.(게임이 시작되고 소유할 때 모든 HUD 요소가 유효하지는 않지만 HUD Health를 기억하고 설정)
+	UpdateHUDHealth(); 
+	UpdateHUDShield(); 
 	if (HasAuthority())
 	{
 		// 어떤 액터(Actor)가 데미지를 받을 때 호출되는 이벤트 (콜백 달아줌.)
@@ -387,9 +389,26 @@ void AMyBlasterCharacter::GrenadeButtonPressed()
 void AMyBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
 	if (bElimmed) return;
-	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
+
+	float DamageToHealth = Damage;
+	if (Shield > 0.f)
+	{
+		if (Shield >= Damage)
+		{
+			Shield = FMath::Clamp(Shield - Damage, 0.f, MaxShield);
+			DamageToHealth = 0.f;
+		}
+		else
+		{
+			Shield = 0.f;
+			DamageToHealth = FMath::Clamp(DamageToHealth - Shield, 0.f, Damage);
+		}
+	}
+
+	Health = FMath::Clamp(Health - DamageToHealth, 0.f, MaxHealth);
 	// 서버에서만 실행됨. -> 클라도 챙겨주자 (OnRep_Health())
 	UpdateHUDHealth();
+	UpdateHUDShield();
 	PlayHitReactMontage();
 
 	if (Health == 0.f)
@@ -698,12 +717,31 @@ void AMyBlasterCharacter::OnRep_Health(float LastHealth)
 
 }
 
+void AMyBlasterCharacter::OnRep_Shield(float LastShield)
+{
+	UpdateHUDShield();
+	if (Shield < LastShield)
+	{
+		PlayHitReactMontage();
+	}
+
+}
+
 void AMyBlasterCharacter::UpdateHUDHealth()
 {
 	BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
 	if (BlasterPlayerController)
 	{
 		BlasterPlayerController->SetHUDHealth(Health, MaxHealth);
+	}
+}
+
+void AMyBlasterCharacter::UpdateHUDShield()
+{
+	BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
+	if (BlasterPlayerController)
+	{
+		BlasterPlayerController->SetHUDShield(Shield, MaxShield);
 	}
 }
 
