@@ -42,6 +42,13 @@ private:
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* PickupMesh;
 
+	UPROPERTY(VisibleAnywhere)
+	class UNiagaraComponent* PickupEffectComponent;
+
+	// 먹을 때 뜰 이펙트
+	UPROPERTY(EditAnywhere)
+	class UNiagaraSystem* PickupEffect;
+
 public:	
 
 };
