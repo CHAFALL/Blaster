@@ -93,20 +93,7 @@ void AMyBlasterCharacter::OnRep_ReplicatedMovement()
 // 서버 한정 - 서버에서만 데미지를 받을 때 호출되도록 되어있으므로 죽는 것도 자연스럽게 서버에서만.
 void AMyBlasterCharacter::Elim()
 {
-	if (Combat && Combat->EquippedWeapon)
-	{
-		if (Combat->EquippedWeapon->bDestroyWeapon)
-		{
-			Combat->EquippedWeapon->Destroy();
-		}
-		else
-		{
-			Combat->EquippedWeapon->Dropped();
-
-		}
-
-	}
-
+	DropOrDestroyWeapons();
 	MulticastElim();
 	GetWorldTimerManager().SetTimer(
 		ElimTimer,
@@ -187,6 +174,35 @@ void AMyBlasterCharacter::ElimTimerFinished()
 		BlasterGameMode->RequestRespawn(this, Controller);
 	}
 	
+}
+
+void AMyBlasterCharacter::DropOrDestroyWeapon(AWeapon* Weapon)
+{
+	if (Weapon == nullptr) return;
+	if (Weapon->bDestroyWeapon)
+	{
+		Weapon->Destroy();
+	}
+	else
+	{
+		Weapon->Dropped();
+	}
+}
+
+void AMyBlasterCharacter::DropOrDestroyWeapons()
+{
+	if (Combat)
+	{
+		if (Combat->EquippedWeapon)
+		{
+			DropOrDestroyWeapon(Combat->EquippedWeapon);
+		}
+		if (Combat->SecondaryWeapon)
+		{
+			DropOrDestroyWeapon(Combat->SecondaryWeapon);
+		}
+
+	}
 }
 
 void AMyBlasterCharacter::Destroyed()
@@ -396,6 +412,8 @@ void AMyBlasterCharacter::GrenadeButtonPressed()
 		Combat->ThrowGrenade();
 	}
 }
+
+
 
 void AMyBlasterCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatorController, AActor* DamageCauser)
 {
