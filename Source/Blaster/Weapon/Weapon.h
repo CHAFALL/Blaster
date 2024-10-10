@@ -13,6 +13,7 @@ enum class EWeaponState : uint8
 	// 에디터와 청사진에 보여질 이름 설정
 	EWS_Initial UMETA(DisplayName = "Initial State"),
 	EWS_Equipped UMETA(DisplayName = "Equipped"),
+	EWS_EquippedSecondary UMETA(DisplayName = "Equipped Secondary"),
 	EWS_Dropped UMETA(DisplayName = "Dropped"),
 	// 갯수 파악용
 	EWS_MAX UMETA(DisplayName = "DefaultMAX"),
@@ -93,6 +94,10 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void OnWeaponStateSet();
+	virtual void OnEquipped();
+	virtual void OnDropped();
+	virtual void OnEquippedSecondary();
 
 	UFUNCTION()
 	virtual void OnSphereOverlap(

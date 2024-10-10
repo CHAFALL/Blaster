@@ -475,23 +475,38 @@ void AMyBlasterCharacter::EquipButtonPressed()
 	// 누누이 말하지만 무기 관련된 것은 서버에서 다뤄야됨.
 	if (Combat)
 	{
-		if (HasAuthority())
-		{
-			Combat->EquipWeapon(OverlappingWeapon);
-		}
-		else
-		{
-			ServerEquipButtonPressed();
-		}
+		ServerEquipButtonPressed(); 
 	}
+
+	// 근데 클라만 ServerEquipButtonPressed()를 호출할 수 있으니깐 서버는 무기 장착을 못하지 않나?
+	// 아래 방식이 좀 더 맞는 것 같은데??? 
+
+	// 리슨 서버여서 되는듯!!! (이게 맞다!)
+
+	/*if (HasAuthority())
+	{
+		Combat->EquipWeapon(OverlappingWeapon);
+	}
+	else
+	{
+		ServerEquipButtonPressed();
+	}*/
 }
 
+// 무기 장착 및 무기 교체 기능을 할 것임.
 void AMyBlasterCharacter::ServerEquipButtonPressed_Implementation()
 {
 	// 이건 서버에서만 실행되므로 HasAuthority를 할 필요 x
 	if (Combat)
 	{
-		Combat->EquipWeapon(OverlappingWeapon);
+		if (OverlappingWeapon)
+		{
+			Combat->EquipWeapon(OverlappingWeapon);
+		}
+		else if (Combat->ShouldSwapWeapons())
+		{
+			Combat->SwapWeapons();
+		}
 	}
 }
 
