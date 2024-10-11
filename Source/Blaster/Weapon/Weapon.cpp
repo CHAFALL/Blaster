@@ -57,17 +57,14 @@ void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	//if (GetLocalRole() == ENetRole::ROLE_Authority) 같은 것임.
-	// 모든 무기류는 서버가 관리 - 이렇게만 하면 서버만 동작하니깐 변수 복제를 이용해서 클라에도 적용시키자!!
-	if (HasAuthority())
-	{
-		AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		AreaSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
-		// 델리게이트와 관련이 되어있는데, 델리게이트는 특정한 매개변수를 전달하도록 설계되어있음. (해당하는 객체의 인스턴스에서만 실행이 되도록 하려고)
-		AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnSphereOverlap); // 첫번째 인자는 사용자 객체이고 두번째 인자는 콜백 함수. 
-		AreaSphere->OnComponentEndOverlap.AddDynamic(this, &AWeapon::OnSphereEndOverlap);
-	}
-	
+	// HasAuthority()를 제거해서 성능 개선 - 어차피 장착을 판단하는 부분은 서버에서 해주고 있음. (AMyBlasterCharacter::EquipButtonPressed() 참고)
+	// 배그 같이 총 줍는 것이 예민한 경우를 대비.
+	AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	AreaSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
+	// 델리게이트와 관련이 되어있는데, 델리게이트는 특정한 매개변수를 전달하도록 설계되어있음. (해당하는 객체의 인스턴스에서만 실행이 되도록 하려고)
+	AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnSphereOverlap); // 첫번째 인자는 사용자 객체이고 두번째 인자는 콜백 함수. 
+	AreaSphere->OnComponentEndOverlap.AddDynamic(this, &AWeapon::OnSphereEndOverlap);
+
 	if (PickupWidget)
 	{
 		PickupWidget->SetVisibility(false);
