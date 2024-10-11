@@ -118,6 +118,7 @@ void UCombatComponent::Fire()
 	{
 		bCanFire = false;
 		ServerFire(HitTarget);
+		LocalFire(HitTarget);
 		if (EquippedWeapon)
 		{
 			CrosshairShootingFactor = 0.75f;
@@ -126,6 +127,8 @@ void UCombatComponent::Fire()
 	}
 	
 }
+
+
 
 void UCombatComponent::StartFireTimer()
 {
@@ -156,6 +159,16 @@ void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& Trac
 }
 
 void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
+{
+	if (Character && Character->IsLocallyControlled() && !Character->HasAuthority()) return;
+
+	// 위의 코드를 통과했다는 것은 서버나 특정 캐릭터를 제어하지 않는 클라.
+	LocalFire(TraceHitTarget);
+}
+
+// 화재 구현은 로컬로 할 수 있음. -> 이를 통해 성능 개선. (멀티캐스트에서 나와!)
+// 패킷도 덜 보내게되고 로컬 반응성 향상
+void UCombatComponent::LocalFire(const FVector_NetQuantize& TraceHitTarget)
 {
 	if (EquippedWeapon == nullptr) return;
 	if (Character && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun)
@@ -194,6 +207,7 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 void UCombatComponent::SwapWeapons()
 {
+	if (CombatState != ECombatState::ECS_Unoccupied) return;
 	AWeapon* TempWeapon = EquippedWeapon;
 	EquippedWeapon = SecondaryWeapon;
 	SecondaryWeapon = TempWeapon;

@@ -121,8 +121,7 @@ void AWeapon::SetHUDAmmo()
 }
 
 
-// 매우 자주 호출 -> 그래서 변수 저장. (BlasterOwnerCharacter, BlasterOwnerController)
-void AWeapon::SpendRound() // 총을 쏠 때 시간을 보내야 됨.
+void AWeapon::SpendRound()
 {
 	Ammo = FMath::Clamp(Ammo - 1, 0, MagCapacity);
 	SetHUDAmmo();
@@ -277,7 +276,10 @@ void AWeapon::Fire(const FVector& HitTarget)
 			}
 		}
 	}
-	SpendRound();
+	if (HasAuthority())
+	{
+		SpendRound();
+	}
 }
 
 void AWeapon::Dropped()
