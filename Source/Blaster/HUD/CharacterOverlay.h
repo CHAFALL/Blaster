@@ -44,4 +44,10 @@ public:
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* GrenadesText;
+
+	UPROPERTY(meta = (BindWidget))
+	class UImage* HighPingImage;
+
+	UPROPERTY(meta = (BindWidgetAnim), Transient) // 세이브 게임이나 레벨 파일과 같은 영속적인 데이터에 저장되지 않도록
+	UWidgetAnimation* HighPingAnimation;
 };
