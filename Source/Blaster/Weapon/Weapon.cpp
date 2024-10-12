@@ -83,7 +83,6 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AWeapon, WeaponState); 
-	DOREPLIFETIME(AWeapon, Ammo);
 }
 
 void AWeapon::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -118,16 +117,58 @@ void AWeapon::SetHUDAmmo()
 	}
 }
 
-
+// 로컬 - 클라와 서버 둘다에 발포.
+// 우리가 서버에 있다면 클라에게 해당 정보를 보내야 클라가 탄약의 권위 있는 가치를 알아볼 수 있다?
 void AWeapon::SpendRound()
 {
 	Ammo = FMath::Clamp(Ammo - 1, 0, MagCapacity);
 	SetHUDAmmo();
+	if (HasAuthority())
+	{
+		ClientUpdateAmmo(Ammo);
+	}
+	else
+	{
+		++Sequence;
+	}
 }
 
-// 
-void AWeapon::OnRep_Ammo()
+void AWeapon::ClientUpdateAmmo_Implementation(int32 ServerAmmo)
 {
+	if (HasAuthority()) return;
+	Ammo = ServerAmmo; // 서버로부터 받은 탄약 값을 업데이트
+	--Sequence;
+	Ammo -= Sequence; // 전송한 처리되지 않은 요청 수에 따라 수정을 해줌.
+	SetHUDAmmo();
+
+
+	// Sequence(시퀀스 번호): 클라이언트가 발사할 때마다 자신이 발사한 총알의 개수를 기록. 
+	// 서버로부터 탄약 업데이트가 돌아올 때, 
+	// 클라이언트는 자신이 서버에게 요청했지만 아직 처리되지 않은 발사 횟수만큼의 차이를 계산해 탄약 수를 조정
+	// 이로써 서버와 클라이언트 간 탄약의 불일치를 해결
+
+	// 클라이언트 예측 : 클라이언트는 발사 시 탄약을 바로 차감하고,
+	// 나중에 서버가 보낸 정보를 바탕으로 이를 수정
+	// 따라서 서버의 지연으로 인해 발생할 수 있는 탄약 정보 불일치를 방지하고
+	// 클라이언트는 즉각적인 반응성을 유지할 수 가능
+
+	// 서버 권위(Authority) : 서버가 권위(authority)를 가지고 있으므로,
+	// 최종 탄약 값은 서버에서 결정됩니다.클라이언트는 예측을 하지만,
+	// 서버로부터 최종 탄약 값을 받아야 실제로 올바른 값이 유지됨.
+}
+
+// 로컬, 아래의 2개는 클라측 예측이라기엔 살짝 거리가..
+void AWeapon::AddAmmo(int32 AmmoToAdd)
+{
+	Ammo = FMath::Clamp(Ammo + AmmoToAdd, 0, MagCapacity);
+	SetHUDAmmo();
+	ClientAddAmmo(AmmoToAdd);
+}
+
+void AWeapon::ClientAddAmmo_Implementation(int32 AmmoToAdd)
+{
+	if (HasAuthority()) return; // 리슨 서버는 서버이면서 클라이언트의 권한도 동시에 가지는 특수한 경우
+	Ammo = FMath::Clamp(Ammo + AmmoToAdd, 0, MagCapacity);
 	BlasterOwnerCharacter = BlasterOwnerCharacter == nullptr ? Cast<AMyBlasterCharacter>(GetOwner()) : BlasterOwnerCharacter;
 	if (BlasterOwnerCharacter && BlasterOwnerCharacter->GetCombat() && IsFull())
 	{
@@ -274,10 +315,11 @@ void AWeapon::Fire(const FVector& HitTarget)
 			}
 		}
 	}
-	if (HasAuthority())
-	{
-		SpendRound();
-	}
+	// 클라 측 예측 - 이렇게만 하면 총알 수가 내려갔다가 다시 올라가고 다시 내려가는 증상 발생.
+	// 이렇게 하면 즉시 반응은 함 (일단 움직이는 느낌.)
+	// 서버 조정 필요.
+	SpendRound();
+
 }
 
 void AWeapon::Dropped()
@@ -290,11 +332,7 @@ void AWeapon::Dropped()
 	BlasterOwnerController = nullptr; // 
 }
 
-void AWeapon::AddAmmo(int32 AmmoToAdd)
-{
-	Ammo = FMath::Clamp(Ammo - AmmoToAdd, 0, MagCapacity);
-	SetHUDAmmo();
-}
+
 
 bool AWeapon::IsEmpty()
 {

@@ -167,17 +167,27 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class ACasing> CasingClass;
-
-	UPROPERTY(EditAnywhere, ReplicatedUsing = OnRep_Ammo)
+	
+	// 값 복사 방식 제거. (클라 측 예측)
+	// 클라이언트가 즉시 반응성을 유지하면서도 서버와의 불일치를 최소화하기 위해 시퀀스 번호를 사용해 탄약을 예측하고,
+	// 서버의 응답이 돌아오면 그에 맞춰 보정하는 구조로 변경
+	UPROPERTY(EditAnywhere)
 	int32 Ammo;
 
-	UFUNCTION()
-	void OnRep_Ammo();
+	UFUNCTION(Client, Reliable)
+	void ClientUpdateAmmo(int32 ServerAmmo);
+
+	UFUNCTION(Client, Reliable)
+	void ClientAddAmmo(int32 AmmoToAdd);
 	
 	void SpendRound();
 
 	UPROPERTY(EditAnywhere)
 	int MagCapacity;
+
+	// The number of unprocessed server requests for Ammo.
+	// Incremented in SpendRound, decremented in ClientUpdateAmmo.
+	int32 Sequence = 0;
 
 	UPROPERTY()
 	class AMyBlasterCharacter* BlasterOwnerCharacter;

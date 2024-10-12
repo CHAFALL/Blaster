@@ -272,3 +272,9 @@ public:
 	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() const { return AttachedGrenade; }
 	FORCEINLINE UBuffComponent* GetBuff() const { return Buff; }
 };
+
+
+
+// 클라이언트 측 예측. (일단 움직이고 용서)
+// 지터가 생긴 이유 - 서버에서 데이터를 받을 때마다 과거로부터 데이터를 받는다는 걸 기억해야 하기 때문.
+// 캐릭터 이동 구성 요소는 이미 적용이 되어있다. 이 기술을 다른 분야에도 적용하겠다.
