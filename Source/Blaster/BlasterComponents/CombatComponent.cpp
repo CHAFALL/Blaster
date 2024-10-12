@@ -408,9 +408,15 @@ void UCombatComponent::ReloadEmptyWeapon()
 void UCombatComponent::Reload()
 {
 	// 보내기 전에 체크를 해서 대역폭을 아끼자.
-	if (CarriedAmmo > 0 && CombatState == ECombatState::ECS_Unoccupied && EquippedWeapon && !EquippedWeapon->IsFull())
+	if (CarriedAmmo > 0 && CombatState == ECombatState::ECS_Unoccupied && EquippedWeapon && !EquippedWeapon->IsFull() && !bLocallyReloading)
 	{
 		ServerReload();
+		// 로컬에서 먼저 몽타주를 틀어줌. -> 이것만 하면 Combat State가 복제되면서 HandleReload를 또 부르기 때문에 초반에 2번 실행되면서 이상해짐.
+		// -> HandleReload를 호출하는 부분에 가서 !Character->IsLocallyControlled()를 넣어주자
+		// -> 아직 남은 문제점이 있다.  Combat State는 여전히 딜레이가 있으므로 복제 되기 전까지 FABRIK IK를 쓰는 문제가 있다.
+		// bLocallyReloading을 이용하자!
+		HandleReload();
+		bLocallyReloading = true;
 	}
 }
 
@@ -419,13 +425,14 @@ void UCombatComponent::ServerReload_Implementation()
 	if (Character == nullptr || EquippedWeapon == nullptr) return;
 	
 	CombatState = ECombatState::ECS_Reloading; //RPC 동작
-	HandleReload();
+	if (!Character->IsLocallyControlled()) HandleReload();
 	
 }
 
 void UCombatComponent::FinishReloading()
 {
 	if (Character == nullptr) return;
+	bLocallyReloading = false;
 	if (Character->HasAuthority())
 	{
 		CombatState = ECombatState::ECS_Unoccupied;
@@ -443,7 +450,7 @@ void UCombatComponent::OnRep_CombatState()
 	switch (CombatState)
 	{
 	case ECombatState::ECS_Reloading:
-		HandleReload();
+		if (Character && !Character->IsLocallyControlled()) HandleReload();
 		break;
 	case ECombatState::ECS_Unoccupied:
 		if (bFireButtonPressed)
@@ -577,7 +584,10 @@ void UCombatComponent::ServerLaunchGrenade_Implementation(const FVector_NetQuant
 
 void UCombatComponent::HandleReload()
 {
-	Character->PlayReloadMontage();
+	if (Character)
+	{
+		Character->PlayReloadMontage();
+	}
 }
 
 int32 UCombatComponent::AmountToReload()
@@ -868,6 +878,7 @@ void UCombatComponent::ServerSetAiming_Implementation(bool bIsAiming)
 bool UCombatComponent::CanFire()
 {
 	if (EquippedWeapon == nullptr) return false;
+	if (bLocallyReloading) return false;
 	if (!EquippedWeapon->IsEmpty() && bCanFire && CombatState == ECombatState::ECS_Reloading && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Shotgun) return true;
 	return !EquippedWeapon->IsEmpty() && bCanFire && CombatState == ECombatState::ECS_Unoccupied; 
 }
