@@ -78,6 +78,64 @@ protected:
 	void PollInit();
 	void RotateInPlace(float DeltaTime);
 
+	/**
+	* Hit boxes used for server-side rewind
+	*/
+
+	UPROPERTY(EditAnywhere)
+	class UBoxComponent* head;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* pelvis; 
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* spine_02; 
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* spine_03;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* upperarm_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* upperarm_r;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* lowerarm_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* lowerarm_r;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* hand_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* hand_r;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* backpack;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* blanket;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* thigh_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* thigh_r;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* calf_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* calf_r;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* foot_l;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* foot_r;
+
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	class USpringArmComponent* CameraBoom;
@@ -274,8 +332,3 @@ public:
 	bool IsLocallyReloading();
 };
 
-
-
-// 클라이언트 측 예측. (일단 움직이고 용서)
-// 지터가 생긴 이유 - 서버에서 데이터를 받을 때마다 과거로부터 데이터를 받는다는 걸 기억해야 하기 때문.
-// 캐릭터 이동 구성 요소는 이미 적용이 되어있다. 이 기술을 다른 분야에도 적용하겠다.
