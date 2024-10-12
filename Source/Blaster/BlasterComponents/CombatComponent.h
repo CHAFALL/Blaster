@@ -127,8 +127,17 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_SecondaryWeapon)
 	AWeapon* SecondaryWeapon;
 
-	UPROPERTY(Replicated)
-	bool bAiming; // 움크리기나 점프 같은 것은 그냥 지원하지만 이런 것들은 복사를 통해 알려줘야됨.
+	// 줌을 잠깐만 누르면 이상해지는 현상 발생
+	// 로컬에서 Aiming을 누르고 있는지를 알려줘야 됨.
+	UPROPERTY(ReplicatedUsing = OnRep_Aiming)
+	bool bAiming = false;
+
+	// bAiming이랑 똑같은거 아냐??
+	// -> 이건 로컬로 제어되는 유일한 변수임, 조준 버튼을 누르고 있는지에 대한 여부에 대한 진정한 값.
+	bool bAimButtonPressed = false;
+
+	UFUNCTION()
+	void OnRep_Aiming();
 
 	UPROPERTY(EditAnywhere)
 	float BaseWalkSpeed;
