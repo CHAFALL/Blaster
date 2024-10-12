@@ -60,6 +60,13 @@ protected:
 	void OnRep_SecondaryWeapon();
 
 	void Fire();
+	void FireProjectileWeapon();
+	// 무기 발사와 폭발 효과 사이의 지연 시간을 줄이자.
+
+	// 기존 방식은 서버와 클라의 산탄 계산이 달랐음
+	// 그래서 클라에서는 맞아야 되는 것이 서버에서는 안 맞았다고 판단하기도 함... 이런 것들을 개선할 것임.
+	void FireHitScanWeapon();
+	void FireShotgun();
 	void LocalFire(const FVector_NetQuantize& TraceHitTarget);
 
 	UFUNCTION(Server, Reliable)
@@ -232,3 +239,7 @@ public:
 
 // 수류탄을 던질 시에 무기는 오른손에 부착된 상태이다.
 // 이를 무기를 왼손에 부착하고 오른손에 다시 붙이는 식으로 변경할 것임.
+
+
+
+
