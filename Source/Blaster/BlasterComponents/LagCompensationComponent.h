@@ -37,7 +37,17 @@ struct FFramePackage
 
 };
 
+USTRUCT(BlueprintType)
+struct FServerSideRewindResult
+{
+	GENERATED_BODY()
 
+	UPROPERTY()
+	bool bHitConfirmed;
+
+	UPROPERTY()
+	bool bHeadShot;
+};
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class BLASTER_API ULagCompensationComponent : public UActorComponent
@@ -49,13 +59,20 @@ public:
 	friend class AMyBlasterCharacter;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	void ShowFramePackage(const FFramePackage& Package, const FColor& Color);
-
+	FServerSideRewindResult ServerSideRewind(class AMyBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime);
+	UFUNCTION(Server, Reliable)
+	void ServerScoreRequest(AMyBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime, class AWeapon* DamageCauser);
 protected:
 	virtual void BeginPlay() override;
 	void SaveFramePackage(FFramePackage& Package);
-
+	FFramePackage InterpBetweenFrames(const FFramePackage& OlderFrame, const FFramePackage& YoungerFrame, float HitTime);
+	FServerSideRewindResult ConfirmHit(const FFramePackage& Package, AMyBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation);
+	void CacheBoxPositions(AMyBlasterCharacter* HitCharacter, FFramePackage& OutFramePackage);
+	void MoveBoxes(AMyBlasterCharacter* HitCharacter, const FFramePackage& Package);
+	void ResetHitBoxes(AMyBlasterCharacter* HitCharacter, const FFramePackage& Package);
+	void EnableCharacterMeshCollision(AMyBlasterCharacter* HitCharacter, ECollisionEnabled::Type CollisionEnabled);
+	void SaveFramePackage();
 private:
-
 	UPROPERTY()
 	AMyBlasterCharacter* Character;
 
@@ -70,7 +87,7 @@ private:
 	TDoubleLinkedList<FFramePackage> FrameHistory;
 
 	UPROPERTY(EditAnywhere)
-	float MaxRecordTime = 0.4f;
+	float MaxRecordTime = 4.f; // 이거 너무 낮추니 안되는 문제 발생. (처음에 0.4f로 했었음.)
 
 
 public:	
@@ -100,7 +117,7 @@ public:
 // 장점:  네트워크 지연을 보상해 핑이 높은 플레이어도 자신의 공격이 정확하게 판정되도록 합니다.
 // 단점 :핑이 낮은 플레이어는 되감기 기술이 불필요하다고 느낄 수 있고,
 // 네트워크 지연으로 인해 실제 상황과 판정이 일치하지 않는 불공정한 상황이 발생할 수 있다.
-// 특히, 엄폐물 뒤에 숨어도 피격 판정이 날 수 있다.
+// 특히, 엄폐물 뒤에 숨어도 피격 판정이 날 수 있다. (난 분명 숨었다고 생각했는데 판정은 좀 늦게 나서 억울해 하는 상황 발생.)
 // (우리 기기와 서버와의 딜레이가 있는 것과 마찬가지로 상대 기기와도 서버가 딜레이가 있는데
 // 판단하는 것은 서버가 하는 것이어서 발생하는 문제)
 // 따라서 특정 지연 시간까지 슈팅 게임에서 서버 측 되감기를 사용하는 것이 좋다.
