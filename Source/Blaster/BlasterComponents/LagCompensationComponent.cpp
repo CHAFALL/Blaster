@@ -15,6 +15,8 @@ ULagCompensationComponent::ULagCompensationComponent()
 }
 
 
+
+
 void ULagCompensationComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -22,23 +24,7 @@ void ULagCompensationComponent::BeginPlay()
 	
 }
 
-void ULagCompensationComponent::SaveFramePackage(FFramePackage& Package)
-{
-	// GetOwner - 해당 컴포넌트를 소유한.
-	Character = Character == nullptr ? Cast<AMyBlasterCharacter>(GetOwner()) : Character;
-	if (Character)
-	{
-		Package.Time = GetWorld()->GetTimeSeconds();
-		for (auto& BoxPair : Character->HitCollisionBoxes)
-		{
-			FBoxInformation BoxInfomation;
-			BoxInfomation.Location = BoxPair.Value->GetComponentLocation(); // 해당 상자 구성요소의 월드 공간 위치
-			BoxInfomation.Rotation = BoxPair.Value->GetComponentRotation();
-			BoxInfomation.BoxExtent = BoxPair.Value->GetScaledBoxExtent(); // 현재 값으로 크기가 조정된 상자 범위
-			Package.HitBoxInfo.Add(BoxPair.Key, BoxInfomation);
-		}
-	}
-}
+
 
 FFramePackage ULagCompensationComponent::InterpBetweenFrames(const FFramePackage& OlderFrame, const FFramePackage& YoungerFrame, float HitTime)
 {
@@ -134,6 +120,121 @@ FServerSideRewindResult ULagCompensationComponent::ConfirmHit(const FFramePackag
 
 }
 
+FShotgunServerSideRewindResult ULagCompensationComponent::ShotgunConfirmHit(const TArray<FFramePackage>& FramePackages, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations)
+{
+	for (auto& Frame : FramePackages)
+	{
+		if (Frame.Character == nullptr) return FShotgunServerSideRewindResult();
+	}
+
+	FShotgunServerSideRewindResult ShotgunResult;
+	// 각 HitCharacter들의 모든 프레임 패키지를 저장해둠 - 나중에 되돌리기 위해
+	TArray<FFramePackage> CurrentFrames;
+	for (auto& Frame : FramePackages)
+	{
+		FFramePackage CurrentFrame;
+		CurrentFrame.Character = Frame.Character;
+		CacheBoxPositions(Frame.Character, CurrentFrame); // 나중에 히트박스를 복구할 때 사용하려고 캐싱해둠.
+		MoveBoxes(Frame.Character, Frame); //서버가 저장하고 있던 체크할 과거의 프레임 데이터(Frame)를 이용해 적의 히트박스를 과거 시점으로 복원.
+		EnableCharacterMeshCollision(Frame.Character, ECollisionEnabled::NoCollision);
+		CurrentFrames.Add(CurrentFrame);
+	}
+
+	// 이렇게 위와 똑같은 형태의 for문이어도 안의 내용물은 완전히 위와 달라서 이렇게 해도 하나의 for문으로 하는거랑 계산량이 동일.
+	for (auto& Frame : FramePackages)
+	{
+		// Enable collision for the head first
+		UBoxComponent* HeadBox = Frame.Character->HitCollisionBoxes[FName("head")];
+		HeadBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		HeadBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+	}
+
+	// 프레임 패키지를 반복하는 대신 (라인 추적수)개의 적중 위치를 반복하고 싶음.
+	UWorld* World = GetWorld();
+	// check for head shots
+	for (auto& HitLocation : HitLocations)
+	{
+		// 선추적 - 이번엔 머리를 맞추더라도 나가지 않음. (여러번 맞을 수 있음.)
+		FHitResult ConfirmHitResult;
+		const FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.25f;
+		if (World)
+		{
+			World->LineTraceSingleByChannel(
+				ConfirmHitResult,
+				TraceStart,
+				TraceEnd,
+				ECollisionChannel::ECC_Visibility
+			);
+			AMyBlasterCharacter* BlasterCharacter = Cast<AMyBlasterCharacter>(ConfirmHitResult.GetActor());
+			if (BlasterCharacter)
+			{
+				if (ShotgunResult.HeadShots.Contains(BlasterCharacter))
+				{
+					ShotgunResult.HeadShots[BlasterCharacter]++;
+				}
+				else
+				{
+					ShotgunResult.HeadShots.Emplace(BlasterCharacter, 1);
+				}
+			}
+		}
+	}
+	
+	// enable collision for all boxes, then disable for head box
+	for (auto& Frame : FramePackages)
+	{
+		for (auto& HitBoxPair : Frame.Character->HitCollisionBoxes)
+		{
+			// 모든 박스에 충돌이 가능하도록 한 뒤에 머리만 비활성화.
+			if (HitBoxPair.Value != nullptr)
+			{
+				HitBoxPair.Value->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+				HitBoxPair.Value->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+			}
+		}
+		UBoxComponent* HeadBox = Frame.Character->HitCollisionBoxes[FName("head")];
+		HeadBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
+	// check for body shots
+	for (auto& HitLocation : HitLocations)
+	{
+		// 선추적
+		FHitResult ConfirmHitResult;
+		const FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.25f;
+		if (World)
+		{
+			World->LineTraceSingleByChannel(
+				ConfirmHitResult,
+				TraceStart,
+				TraceEnd,
+				ECollisionChannel::ECC_Visibility
+			);
+			AMyBlasterCharacter* BlasterCharacter = Cast<AMyBlasterCharacter>(ConfirmHitResult.GetActor());
+			if (BlasterCharacter)
+			{
+				if (ShotgunResult.BodyShots.Contains(BlasterCharacter))
+				{
+					ShotgunResult.BodyShots[BlasterCharacter]++;
+				}
+				else
+				{
+					ShotgunResult.BodyShots.Emplace(BlasterCharacter, 1);
+				}
+			}
+		}
+	}
+
+	for (auto& Frame : CurrentFrames)
+	{
+		ResetHitBoxes(Frame.Character, Frame);
+		EnableCharacterMeshCollision(Frame.Character, ECollisionEnabled::QueryAndPhysics);
+	}
+
+	return ShotgunResult;
+}
+
+
 // 현재 HitCharacter의 충돌 박스 위치와 회전 정보를 캐시.
 // 즉, 현재 프레임의 히트박스 정보를 저장하는 역할 - 나중에 되돌릴 때 이용.
 void ULagCompensationComponent::CacheBoxPositions(AMyBlasterCharacter* HitCharacter, FFramePackage& OutFramePackage)
@@ -213,14 +314,34 @@ void ULagCompensationComponent::ShowFramePackage(const FFramePackage& Package, c
 
 FServerSideRewindResult ULagCompensationComponent::ServerSideRewind(AMyBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime)
 {
+	FFramePackage FrameToCheck = GetFrameToCheck(HitCharacter, HitTime);
+	return ConfirmHit(FrameToCheck, HitCharacter, TraceStart, HitLocation);
+	
+}
+
+FShotgunServerSideRewindResult ULagCompensationComponent::ShotgunServerSideRewind(const TArray<AMyBlasterCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime)
+{
+	TArray<FFramePackage> FramesToCheck;
+	for (AMyBlasterCharacter* HitCharacter : HitCharacters)
+	{
+		FramesToCheck.Add(GetFrameToCheck(HitCharacter, HitTime));
+	}
+	return ShotgunConfirmHit(FramesToCheck, TraceStart, HitLocations);
+}
+
+
+
+FFramePackage ULagCompensationComponent::GetFrameToCheck(AMyBlasterCharacter* HitCharacter, float HitTime)
+{
 	bool bReturn =
 		HitCharacter == nullptr ||
 		HitCharacter->GetLagCompensation() == nullptr ||
 		HitCharacter->GetLagCompensation()->FrameHistory.GetHead() == nullptr ||
 		HitCharacter->GetLagCompensation()->FrameHistory.GetTail() == nullptr;
-	if (bReturn) return FServerSideRewindResult();
+	if (bReturn) return FFramePackage();
 	// Frame package that we check to verify a hit
 	FFramePackage FrameToCheck;
+
 	bool bShouldInterpolate = true;
 	// Frame history of the HitCharacter
 	const TDoubleLinkedList<FFramePackage>& History = HitCharacter->GetLagCompensation()->FrameHistory;
@@ -229,7 +350,7 @@ FServerSideRewindResult ULagCompensationComponent::ServerSideRewind(AMyBlasterCh
 	if (OlderHistoryTime > HitTime)
 	{
 		// too far back - too laggy to do SSR
-		return FServerSideRewindResult();
+		return FFramePackage();
 	}
 	// 희귀한 확률로 이럴 수도 있음.
 	if (OlderHistoryTime == HitTime)
@@ -266,17 +387,16 @@ FServerSideRewindResult ULagCompensationComponent::ServerSideRewind(AMyBlasterCh
 		FrameToCheck = Older->GetValue();
 		bShouldInterpolate = false;
 	}
-	
+
 	if (bShouldInterpolate)
 	{
 		//Interpolate between Younger and Older
 		FrameToCheck = InterpBetweenFrames(Older->GetValue(), Younger->GetValue(), HitTime);
 	}
-
-	return ConfirmHit(FrameToCheck, HitCharacter, TraceStart, HitLocation);
-	
-
+	FrameToCheck.Character = HitCharacter;
+	return FrameToCheck;
 }
+
 
 void ULagCompensationComponent::ServerScoreRequest_Implementation(AMyBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime, AWeapon* DamageCauser)
 {
@@ -289,6 +409,40 @@ void ULagCompensationComponent::ServerScoreRequest_Implementation(AMyBlasterChar
 			DamageCauser->GetDamage(),
 			Character->Controller,
 			DamageCauser,
+			UDamageType::StaticClass()
+		);
+	}
+}
+
+
+void ULagCompensationComponent::ShotgunServerScoreRequest_Implementation(const TArray<AMyBlasterCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime)
+{
+	FShotgunServerSideRewindResult Confirm = ShotgunServerSideRewind(HitCharacters, TraceStart, HitLocations, HitTime);
+
+	for (auto& HitCharacter : HitCharacters)
+	{
+		// 이 방식도 있다는 것을 보여주려고 일관성을 깸. (DamageCauser 대신에 Character->GetEquippedWeapon()->GetDamage()를 이용)
+		// 이렇게 하면 결과가 바뀔 수도??
+		// DamageCauser 방식으로 할 경우, 서버가 피해를 가할 때 해당 무기가 실제로 가한 피해를 확인할 수 있다.
+		// 즉, 클라이언트에서 보내는 데이터를 신뢰하지 않고, 서버가 알고 있는 데이터를 기반으로 대미지를 계산.
+		// 반면, Character->GetEquippedWeapon()->GetDamage() 방식은 서버가 캐릭터가 장착한 무기를 직접 참조해서 대미지를 계산. (동기화 문제(재빠르게 무기 바꿈)로 클라이언트와 서버 간의 무기 상태가 일치하지 않으면 잘못된 대미지가 계산될 가능성도 있음)
+		if (HitCharacter == nullptr || HitCharacter->GetEquippedWeapon() == nullptr || Character == nullptr) continue;
+		float TotalDamage = 0.f;
+		if (Confirm.HeadShots.Contains(HitCharacter))
+		{
+			float HeadShotDamage = Confirm.HeadShots[HitCharacter] * HitCharacter->GetEquippedWeapon()->GetDamage();
+			TotalDamage += HeadShotDamage;
+		}
+		if (Confirm.BodyShots.Contains(HitCharacter))
+		{
+			float BodyShotDamage = Confirm.BodyShots[HitCharacter] * HitCharacter->GetEquippedWeapon()->GetDamage();
+			TotalDamage += BodyShotDamage;
+		}
+		UGameplayStatics::ApplyDamage(
+			HitCharacter,
+			TotalDamage,
+			Character->Controller,
+			HitCharacter->GetEquippedWeapon(),
 			UDamageType::StaticClass()
 		);
 	}
@@ -325,5 +479,25 @@ void ULagCompensationComponent::SaveFramePackage()
 		FrameHistory.AddHead(ThisFrame);
 
 		//ShowFramePackage(ThisFrame, FColor::Red);
+	}
+}
+
+// 함수 이름은 같지만 매개변수 다름.
+void ULagCompensationComponent::SaveFramePackage(FFramePackage& Package)
+{
+	// GetOwner - 해당 컴포넌트를 소유한.
+	Character = Character == nullptr ? Cast<AMyBlasterCharacter>(GetOwner()) : Character;
+	if (Character)
+	{
+		Package.Time = GetWorld()->GetTimeSeconds();
+		Package.Character = Character;
+		for (auto& BoxPair : Character->HitCollisionBoxes)
+		{
+			FBoxInformation BoxInfomation;
+			BoxInfomation.Location = BoxPair.Value->GetComponentLocation(); // 해당 상자 구성요소의 월드 공간 위치
+			BoxInfomation.Rotation = BoxPair.Value->GetComponentRotation();
+			BoxInfomation.BoxExtent = BoxPair.Value->GetScaledBoxExtent(); // 현재 값으로 크기가 조정된 상자 범위
+			Package.HitBoxInfo.Add(BoxPair.Key, BoxInfomation);
+		}
 	}
 }
