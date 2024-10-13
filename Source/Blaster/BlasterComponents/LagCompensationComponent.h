@@ -37,6 +37,8 @@ struct FFramePackage
 
 };
 
+
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class BLASTER_API ULagCompensationComponent : public UActorComponent
 {
@@ -60,6 +62,15 @@ private:
 	UPROPERTY()
 	class ABlasterPlayerController* Controller;
 
+	// 프레임 패키지는 일반적으로 시간 순서대로 저장하고,
+	// 이전 프레임들을 삭제하며 새로운 프레임을 추가하는 작업이 "빈번하게" 발생
+	// 자료구조 TArray는 별로, TDoubleLinkedList를 이용하자 (Head, Tail 접근이 용이)
+
+	// Head가 가장 최신, Tail이 가장 오래된.
+	TDoubleLinkedList<FFramePackage> FrameHistory;
+
+	UPROPERTY(EditAnywhere)
+	float MaxRecordTime = 0.4f;
 
 
 public:	
