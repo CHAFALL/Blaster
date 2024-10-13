@@ -10,6 +10,8 @@
 #include "Blaster/BlasterTypes/CombatState.h"
 #include "MyBlasterCharacter.generated.h"
 
+
+
 UCLASS()
 class BLASTER_API AMyBlasterCharacter : public ACharacter, public IInteractWithCrosshairsInterface
 {
@@ -47,6 +49,8 @@ public:
 
 	void SpawnDefaultWeapon();
 
+	UPROPERTY()
+	TMap<FName, class UBoxComponent*> HitCollisionBoxes;
 protected:
 	virtual void BeginPlay() override;
 
@@ -136,6 +140,7 @@ protected:
 	UPROPERTY(EditAnywhere)
 	UBoxComponent* foot_r;
 
+
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	class USpringArmComponent* CameraBoom;
@@ -156,11 +161,20 @@ private:
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
 
+
+	/**
+	* Blaster components
+	*/
+
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UCombatComponent* Combat;
 
 	UPROPERTY(VisibleAnywhere)
 	class UBuffComponent* Buff;
+
+	UPROPERTY(VisibleAnywhere)
+	class ULagCompensationComponent* LagCompensation;
 
 	// RPC -> Server : 클라가 서버를 호출하는 느낌.
 	// Client : 서버가 클라이언트에게 할 것 토스하는 느낌.
