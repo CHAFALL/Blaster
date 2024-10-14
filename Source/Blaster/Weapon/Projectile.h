@@ -18,6 +18,19 @@ public:
 	virtual void Destroyed() override; // 이 함수를 쓰면 발사체를 파괴하는 서버에서만 호출되는 게 아니라 클라에서도 호출됨.
 	// 복제된 actor를 파괴하는 행동이 클라에게도 전달되므로!!
 
+	/**
+	* Used with server-side rewind
+	*/
+
+	bool bUseServerSideRewind = false;
+	FVector_NetQuantize TraceStart;
+	FVector_NetQuantize100 InitialVelocity; // FVector_NetQuantize보다 조금 더 자세한.
+
+	UPROPERTY(EditAnywhere)
+	float InitialSpeed = 15000.f;
+
+	float Damage = 20.f;
+
 protected:
 	virtual void BeginPlay() override;
 	void StartDestroyTimer();
@@ -28,8 +41,7 @@ protected:
 	UFUNCTION()
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
-	UPROPERTY(EditAnywhere)
-	float Damage = 20.f;
+	
 
 	// 충돌 시 보여줄 파티클 이펙트
 	UPROPERTY(EditAnywhere)

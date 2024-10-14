@@ -76,11 +76,31 @@ public:
 	friend class AMyBlasterCharacter;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 	void ShowFramePackage(const FFramePackage& Package, const FColor& Color);
+	
+	/**
+	* Hitscan
+	*/
+
 	FServerSideRewindResult ServerSideRewind(class AMyBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime);
+	
+	/**
+	* Projectile
+	*/
+
+	FServerSideRewindResult ProjectileServerSideRewind(AMyBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime);
+
+
+	/**
+	* Shotgun
+	*/
+	
 	FShotgunServerSideRewindResult ShotgunServerSideRewind(const TArray<AMyBlasterCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime);
 	
 	UFUNCTION(Server, Reliable)
 	void ServerScoreRequest(AMyBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime, class AWeapon* DamageCauser);
+	
+	UFUNCTION(Server, Reliable)
+	void ProjectileServerScoreRequest(AMyBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime);
 	
 	UFUNCTION(Server, Reliable)
 	void ShotgunServerScoreRequest(const TArray<AMyBlasterCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime);
@@ -89,14 +109,28 @@ protected:
 	virtual void BeginPlay() override;
 	void SaveFramePackage(FFramePackage& Package);
 	FFramePackage InterpBetweenFrames(const FFramePackage& OlderFrame, const FFramePackage& YoungerFrame, float HitTime);
-	// 참고 샷건할 때 Package안에 HitCharacter가 필요해서 구조를 조금 바꿨음 (그래서 여기서도 AMyBlasterCharacter* HitCharacter가 필요없지만 남겨두겠다.)
-	FServerSideRewindResult ConfirmHit(const FFramePackage& Package, AMyBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation);
+	
 	void CacheBoxPositions(AMyBlasterCharacter* HitCharacter, FFramePackage& OutFramePackage);
 	void MoveBoxes(AMyBlasterCharacter* HitCharacter, const FFramePackage& Package);
 	void ResetHitBoxes(AMyBlasterCharacter* HitCharacter, const FFramePackage& Package);
 	void EnableCharacterMeshCollision(AMyBlasterCharacter* HitCharacter, ECollisionEnabled::Type CollisionEnabled);
 	void SaveFramePackage();
 	FFramePackage GetFrameToCheck(AMyBlasterCharacter* HitCharacter, float HitTime);
+
+
+	/**
+	* Hitscan
+	*/
+
+	// 참고 샷건할 때 Package안에 HitCharacter가 필요해서 구조를 조금 바꿨음 (그래서 여기서도 AMyBlasterCharacter* HitCharacter가 필요없지만 남겨두겠다.)
+	FServerSideRewindResult ConfirmHit(const FFramePackage& Package, AMyBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation);
+
+
+	/**
+	* Projectile
+	*/
+
+	FServerSideRewindResult ProjectileConfirmHit(const FFramePackage& Package, AMyBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime);
 
 	/**
 	* Shotgun

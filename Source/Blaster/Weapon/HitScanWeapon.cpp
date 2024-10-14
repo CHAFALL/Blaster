@@ -36,7 +36,8 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 		AMyBlasterCharacter* BlasterCharacter = Cast<AMyBlasterCharacter>(FireHit.GetActor());
 		if (BlasterCharacter && InstigatorController)
 		{
-			if (HasAuthority() && !bUseServerSideRewind)
+			bool bCauseAuthDamage = !bUseServerSideRewind || OwnerPawn->IsLocallyControlled();
+			if (HasAuthority() && bCauseAuthDamage)
 			{
 				UGameplayStatics::ApplyDamage(
 					BlasterCharacter,
