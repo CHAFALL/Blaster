@@ -86,7 +86,10 @@ void UBlasterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	}
 
 	bUseFABRIK = MyBlasterCharacter->GetCombatState() == ECombatState::ECS_Unoccupied;
-	if (MyBlasterCharacter->IsLocallyControlled() && MyBlasterCharacter->GetCombatState() != ECombatState::ECS_ThrowingGrenade)
+	bool bFABRIKOverride = MyBlasterCharacter->IsLocallyControlled() &&
+		MyBlasterCharacter->GetCombatState() != ECombatState::ECS_ThrowingGrenade &&
+		MyBlasterCharacter->bFinishedSwapping;
+	if (bFABRIKOverride)
 	{
 		bUseFABRIK = !MyBlasterCharacter->IsLocallyReloading(); // 로컬인 경우 위의 것을 무시하고 판단
 	}

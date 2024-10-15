@@ -486,10 +486,20 @@ void AMyBlasterCharacter::PlayElimMontage()
 
 void AMyBlasterCharacter::PlayThrowGrenadeMontage()
 {
+	
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && ThrowGrenadeMontage)
 	{
 		AnimInstance->Montage_Play(ThrowGrenadeMontage);
+	}
+}
+
+void AMyBlasterCharacter::PlaySwapMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && SwapMontage)
+	{
+		AnimInstance->Montage_Play(SwapMontage);
 	}
 }
 
@@ -595,7 +605,17 @@ void AMyBlasterCharacter::EquipButtonPressed()
 	// 누누이 말하지만 무기 관련된 것은 서버에서 다뤄야됨.
 	if (Combat)
 	{
-		ServerEquipButtonPressed(); 
+		if (Combat->CombatState == ECombatState::ECS_Unoccupied) ServerEquipButtonPressed();
+		bool bSawp = Combat->ShouldSwapWeapons() &&
+			!HasAuthority() &&
+			Combat->CombatState == ECombatState::ECS_Unoccupied &&
+			OverlappingWeapon == nullptr;
+		if (bSawp)
+		{
+			PlaySwapMontage();
+			Combat->CombatState = ECombatState::ECS_SwappingWeapons;
+			bFinishedSwapping = false;
+		}
 	}
 
 	// 근데 클라만 ServerEquipButtonPressed()를 호출할 수 있으니깐 서버는 무기 장착을 못하지 않나?
@@ -629,6 +649,7 @@ void AMyBlasterCharacter::ServerEquipButtonPressed_Implementation()
 		}
 	}
 }
+
 
 void AMyBlasterCharacter::CrouchButtonPressed()
 {
