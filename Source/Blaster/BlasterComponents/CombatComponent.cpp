@@ -46,8 +46,8 @@ void UCombatComponent::PickupAmmo(EWeaponType WeaponType, int32 AmmoAmount)
 	if (CarriedAmmoMap.Contains(WeaponType))
 	{
 		CarriedAmmoMap[WeaponType] = FMath::Clamp(CarriedAmmoMap[WeaponType] + AmmoAmount, 0, MaxCarriedAmmo);
+		UpdateCarriedAmmo();
 	}
-	UpdateCarriedAmmo();
 	// 현재 끼고 있는 무기와 같은 타입이라면 HUD 업데이트 (UpdateCarriedAmmo 알아서 해줌)
 
 	// 현재 끼고 있는 무기에 장전할 총알이 없었는데 해당 총알을 먹은 경우 자동 장전 처리
@@ -118,7 +118,6 @@ void UCombatComponent::Fire()
 	if (CanFire())
 	{
 		bCanFire = false;
-		
 		if (EquippedWeapon)
 		{
 			CrosshairShootingFactor = 0.75f;
@@ -147,7 +146,7 @@ void UCombatComponent::FireProjectileWeapon()
 	{
 		HitTarget = EquippedWeapon->bUseScatter ? EquippedWeapon->TraceEndWithScatter(HitTarget) : HitTarget;
 		if (!Character->HasAuthority()) LocalFire(HitTarget); // LocalFire는 오로지 로컬을 위해서 만들어진 함수.
-		ServerFire(HitTarget);
+		ServerFire(HitTarget, EquippedWeapon->FireDelay);
 	}
 	
 }
@@ -159,7 +158,7 @@ void UCombatComponent::FireHitScanWeapon()
 		// 이렇게 하면 로컬에서 산탄을 계산한 다음에 그 계산값을 토대로 서버에서 판단.
 		HitTarget = EquippedWeapon->bUseScatter ? EquippedWeapon->TraceEndWithScatter(HitTarget) : HitTarget;
 		if (!Character->HasAuthority()) LocalFire(HitTarget);
-		ServerFire(HitTarget);
+		ServerFire(HitTarget, EquippedWeapon->FireDelay);
 	}
 }
 
@@ -171,7 +170,7 @@ void UCombatComponent::FireShotgun()
 		TArray<FVector_NetQuantize> HitTargets; // 여기에 목표물이 채워짐
 		Shotgun->ShotgunTraceEndWithScatter(HitTarget, HitTargets); 
 		if (!Character->HasAuthority()) ShotgunLocalFire(HitTargets);
-		ServerShotgunFire(HitTargets);
+		ServerShotgunFire(HitTargets, EquippedWeapon->FireDelay);
 	}
 
 }
@@ -199,9 +198,20 @@ void UCombatComponent::FireTimerFinished()
 }
 
 // 하지만 무기를 발사하는 것과 같은 중요한 건 서버에서 처리
-void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
+void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& TraceHitTarget, float FireDelay)
 {
 	MulticastFire(TraceHitTarget);
+}
+
+bool UCombatComponent::ServerFire_Validate(const FVector_NetQuantize& TraceHitTarget, float FireDelay)
+{
+	/*if (EquippedWeapon)
+	{
+		bool bnearlyEqual = FMath::IsNearlyEqual(EquippedWeapon->FireDelay, FireDelay, 0.001f);
+		return bnearlyEqual;
+	}*/
+
+	return true;
 }
 
 void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
@@ -212,10 +222,22 @@ void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& T
 	LocalFire(TraceHitTarget);
 }
 
-void UCombatComponent::ServerShotgunFire_Implementation(const TArray<FVector_NetQuantize>& TraceHitTargets)
+void UCombatComponent::ServerShotgunFire_Implementation(const TArray<FVector_NetQuantize>& TraceHitTargets, float FireDelay)
 {
 	MulticastShotgunFire(TraceHitTargets);
 }
+
+bool UCombatComponent::ServerShotgunFire_Validate(const TArray<FVector_NetQuantize>& TraceHitTargets, float FireDelay)
+{
+	if (EquippedWeapon)
+	{
+		bool bnearlyEqual = FMath::IsNearlyEqual(EquippedWeapon->FireDelay, FireDelay, 0.001f);
+		return bnearlyEqual;
+	}
+
+	return true;
+}
+
 
 void UCombatComponent::MulticastShotgunFire_Implementation(const TArray<FVector_NetQuantize>& TraceHitTargets)
 {
@@ -241,6 +263,7 @@ void UCombatComponent::ShotgunLocalFire(const TArray<FVector_NetQuantize>& Trace
 	if (Shotgun == nullptr || Character == nullptr) return;
 	if (CombatState == ECombatState::ECS_Reloading || CombatState == ECombatState::ECS_Unoccupied)
 	{
+		bLocallyReloading = false;
 		Character->PlayFireMontage(bAiming);
 		Shotgun->FireShotgun(TraceHitTargets);
 		CombatState = ECombatState::ECS_Unoccupied;
@@ -275,10 +298,12 @@ void UCombatComponent::SwapWeapons()
 	Character->PlaySwapMontage();
 	CombatState = ECombatState::ECS_SwappingWeapons;
 	Character->bFinishedSwapping = false;
+
+	/*AWeapon* TempWeapon = EquippedWeapon;
+	EquippedWeapon = SecondaryWeapon;
+	SecondaryWeapon = TempWeapon;*/
+
 	if (SecondaryWeapon) SecondaryWeapon->EnableCustomDepth(false);
-
-	
-
 }
 
 
@@ -450,8 +475,13 @@ void UCombatComponent::FinishSwap()
 
 }
 
+// 여기가 문제가 많아보임.
 void UCombatComponent::FinishSwapAttachWeapons()
 {
+	PlayEquipWeaponSound(SecondaryWeapon);
+
+	if (Character == nullptr || !Character->HasAuthority()) return;
+
 	AWeapon* TempWeapon = EquippedWeapon;
 	EquippedWeapon = SecondaryWeapon;
 	SecondaryWeapon = TempWeapon;
@@ -460,44 +490,12 @@ void UCombatComponent::FinishSwapAttachWeapons()
 	AttachActorToRightHand(EquippedWeapon);
 	EquippedWeapon->SetHUDAmmo();
 	UpdateCarriedAmmo();
-	PlayEquipWeaponSound(EquippedWeapon);
 
 	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary); // 들고 있는 상태는 아님.
 	AttachActorToBackpack(SecondaryWeapon); // 메고 있는 상태.
+
 }
 
-
-void UCombatComponent::OnRep_CombatState()
-{
-	switch (CombatState)
-	{
-	case ECombatState::ECS_Reloading:
-		if (Character && !Character->IsLocallyControlled()) HandleReload();
-		break;
-	case ECombatState::ECS_Unoccupied:
-		if (bFireButtonPressed)
-		{
-			Fire();
-		}
-		break;
-	case ECombatState::ECS_ThrowingGrenade:
-		// 이미 로컬에선 실행을 했으므로.
-		if (Character && !Character->IsLocallyControlled())
-		{
-			Character->PlayThrowGrenadeMontage();
-			AttachActorToLeftHand(EquippedWeapon);
-			ShowAttachedGrenade(true);
-		}
-		break;
-	case ECombatState::ECS_SwappingWeapons:
-		if (Character && !Character->IsLocallyControlled())
-		{
-			Character->PlaySwapMontage();
-		}
-		
-		break;
-	}
-}
 
 void UCombatComponent::UpdateAmmoValues()
 {
@@ -608,6 +606,37 @@ void UCombatComponent::ServerLaunchGrenade_Implementation(const FVector_NetQuant
 				Grenade->CollisionBox->IgnoreActorWhenMoving(SpawnParams.Owner, true);
 			}
 		}
+	}
+}
+
+void UCombatComponent::OnRep_CombatState()
+{
+	switch (CombatState)
+	{
+	case ECombatState::ECS_Reloading:
+		if (Character && !Character->IsLocallyControlled()) HandleReload();
+		break;
+	case ECombatState::ECS_Unoccupied:
+		if (bFireButtonPressed)
+		{
+			Fire();
+		}
+		break;
+	case ECombatState::ECS_ThrowingGrenade:
+		// 이미 로컬에선 실행을 했으므로.
+		if (Character && !Character->IsLocallyControlled())
+		{
+			Character->PlayThrowGrenadeMontage();
+			AttachActorToLeftHand(EquippedWeapon);
+			ShowAttachedGrenade(true);
+		}
+		break;
+	case ECombatState::ECS_SwappingWeapons:
+		if (Character && !Character->IsLocallyControlled())
+		{
+			Character->PlaySwapMontage();
+		}
+		break;
 	}
 }
 
@@ -724,8 +753,6 @@ void UCombatComponent::OnRep_SecondaryWeapon()
 		
 	}
 }
-
-
 
 void UCombatComponent::TraceUnderCrosshairs(FHitResult& TraceHitResult)
 {

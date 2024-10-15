@@ -70,6 +70,12 @@ void AWeapon::BeginPlay()
 	{
 		PickupWidget->SetVisibility(false);
 	}
+
+	// cheat test
+	/*if (!HasAuthority())
+	{
+		FireDelay = 0.001f;
+	}*/
 }
 
 void AWeapon::Tick(float DeltaTime)
