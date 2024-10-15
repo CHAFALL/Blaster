@@ -44,6 +44,7 @@ void ABlasterPlayerController::Tick(float DeltaTime)
 
 void ABlasterPlayerController::CheckPing(float DeltaTime)
 {
+	if (HasAuthority()) return;
 	HighPingRunningTime += DeltaTime;
 	if (HighPingRunningTime > CheckPingFrequency)
 	{
@@ -51,11 +52,18 @@ void ABlasterPlayerController::CheckPing(float DeltaTime)
 		if (PlayerState)
 		{
 			// GetPing()는 사용 중단 되었고 이와 다른 GetPingInMilliseconds의 차이점은 *4가 되어있다는 점이다.
-			//if (PlayerState->GetPingInMilliseconds() > HighPingThreshold)
+			/*UE_LOG(LogTemp, Warning, TEXT("PlayerState->GetPingInMilliseconds(): %f"), PlayerState->GetPingInMilliseconds());
+			if (PlayerState->GetPingInMilliseconds() > HighPingThreshold)*/
+			UE_LOG(LogTemp, Warning, TEXT("PlayerState->GetCompressedPing() * 4: %d"), PlayerState->GetCompressedPing() * 4);
 			if (PlayerState->GetCompressedPing() * 4 > HighPingThreshold)
 			{
 				HighPingWarning();
 				PingAnimationRunningTime = 0.f;
+				ServerReportPingStatus(true);
+			}
+			else
+			{
+				ServerReportPingStatus(false);
 			}
 		}
 		HighPingRunningTime = 0.f;
@@ -72,6 +80,12 @@ void ABlasterPlayerController::CheckPing(float DeltaTime)
 			StopHighPingWarning();
 		}
 	}
+}
+
+// Is the Ping too high?
+void ABlasterPlayerController::ServerReportPingStatus_Implementation(bool bHighPing)
+{
+	HighPingDelegate.Broadcast(bHighPing);
 }
 
 void ABlasterPlayerController::CheckTimeSync(float DeltaTime)
@@ -490,6 +504,8 @@ void ABlasterPlayerController::OnRep_MatchState()
 		HandleCooldown();
 	}
 }
+
+
 
 void ABlasterPlayerController::HandleMatchHasStarted()
 {
