@@ -43,10 +43,8 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	void SetHUDTime();
-
-	// HUD 업데이트가 제대로 되지 않음을 알 수 있음.
-	// 캐릭터 오버레이가 생성된 후에 HUD 값을 설정해야 된다.
 	void PollInit();
+	virtual void SetupInputComponent() override;
 
 	/**
 	* Sync time between client and server
@@ -83,9 +81,24 @@ protected:
 	void StopHighPingWarning();
 	void CheckPing(float DeltaTime);
 
+	void ShowReturnToMainMenu();
+
 private:
 	UPROPERTY()
 	class ABlasterHUD* BlasterHUD;
+
+	/**
+	* Return to main menu
+	*/
+
+	UPROPERTY(EditAnywhere, Category = HUD)
+	TSubclassOf<class UUserWidget> ReturnToMainMenuWidget;
+
+	// 실제 위젯 인스턴스
+	UPROPERTY()
+	class UReturnToMainMenu* ReturnToMainMenu;
+
+	bool bReturnToMainMenuOpen = false;
 
 	UPROPERTY()
 	class ABlasterGameMode* BlasterGameMode;

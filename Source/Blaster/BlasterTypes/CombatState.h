@@ -12,4 +12,3 @@ enum class ECombatState : uint8
 
 };
 
-// 몽타주를 즉시 재생하고 캐릭터를 비활성화.
