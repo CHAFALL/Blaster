@@ -23,6 +23,9 @@
 #include "Blaster/Weapon/WeaponTypes.h"
 #include "Components/BoxComponent.h"
 #include "Blaster/BlasterComponents/LagCompensationComponent.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
+#include "Blaster/GameState/BlasterGameState.h"
 
 AMyBlasterCharacter::AMyBlasterCharacter()
 {
@@ -259,6 +262,10 @@ void AMyBlasterCharacter::MulticastElim_Implementation(bool bPlayerLeftGame)
 	{
 		ShowSniperScopeWidget(false);
 	}
+	if (CrownComponent)
+	{
+		CrownComponent->DestroyComponent();
+	}
 	GetWorldTimerManager().SetTimer(
 		ElimTimer,
 		this,
@@ -342,6 +349,32 @@ void AMyBlasterCharacter::Destroyed()
 
 }
 
+void AMyBlasterCharacter::MulticastGainedTheLead_Implementation()
+{
+	if (CrownSystem == nullptr) return;
+	CrownComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
+		CrownSystem,
+		GetCapsuleComponent(),
+		FName(),
+		GetActorLocation() + FVector(0.f, 0.f, 110.f),
+		GetActorRotation(),
+		EAttachLocation::KeepWorldPosition,
+		false // 자동 파괴 방지.
+	);
+	if (CrownComponent)
+	{
+		CrownComponent->Activate();
+	}
+}
+
+void AMyBlasterCharacter::MulticastLostTheLead_Implementation()
+{
+	if (CrownComponent)
+	{
+		CrownComponent->DestroyComponent();
+	}
+}
+
 void AMyBlasterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -359,8 +392,6 @@ void AMyBlasterCharacter::BeginPlay()
 	{
 		AttachedGrenade->SetVisibility(false);
 	}
-
-
 }
 
 void AMyBlasterCharacter::Tick(float DeltaTime)
@@ -972,6 +1003,13 @@ void AMyBlasterCharacter::PollInit()
 		{
 			BlasterPlayerState->AddToScore(0.f); // 오호!
 			BlasterPlayerState->AddToDefeats(0);
+
+			// 죽고 태어났는데 내가 여전히 선두인 경우를 대비.
+			ABlasterGameState* BlasterGameState = Cast<ABlasterGameState>(UGameplayStatics::GetGameState(this));
+			if (BlasterGameState && BlasterGameState->TopScoringPlayers.Contains(BlasterPlayerState))
+			{
+				MulticastGainedTheLead();
+			}
 		}
 	}
 }

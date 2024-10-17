@@ -55,7 +55,7 @@ void ABlasterPlayerController::CheckPing(float DeltaTime)
 			// GetPing()는 사용 중단 되었고 이와 다른 GetPingInMilliseconds의 차이점은 *4가 되어있다는 점이다.
 			/*UE_LOG(LogTemp, Warning, TEXT("PlayerState->GetPingInMilliseconds(): %f"), PlayerState->GetPingInMilliseconds());
 			if (PlayerState->GetPingInMilliseconds() > HighPingThreshold)*/
-			UE_LOG(LogTemp, Warning, TEXT("PlayerState->GetCompressedPing() * 4: %d"), PlayerState->GetCompressedPing() * 4);
+			//UE_LOG(LogTemp, Warning, TEXT("PlayerState->GetCompressedPing() * 4: %d"), PlayerState->GetCompressedPing() * 4);
 			if (PlayerState->GetCompressedPing() * 4 > HighPingThreshold)
 			{
 				HighPingWarning();

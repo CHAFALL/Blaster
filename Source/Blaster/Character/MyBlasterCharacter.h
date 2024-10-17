@@ -65,6 +65,12 @@ public:
 	void ServerLeaveGame();
 	FOnLeftGame OnLeftGame;
 
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastGainedTheLead();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastLostTheLead();
+
 
 protected:
 	virtual void BeginPlay() override;
@@ -312,7 +318,7 @@ private:
 	UMaterialInstance* DissolveMaterialInstance;
 
 	/**
-	* Elim bot
+	* Elim effects
 	*/
 
 	UPROPERTY(EditAnywhere)
@@ -327,6 +333,13 @@ private:
 
 	UPROPERTY()
 	class ABlasterPlayerState* BlasterPlayerState;
+
+	UPROPERTY(EditAnywhere)
+	class UNiagaraSystem* CrownSystem;
+
+	// 나중에 파괴하려고 가지고 있을 것임
+	UPROPERTY()
+	class UNiagaraComponent* CrownComponent;
 
 	/**
 	* Grenade
