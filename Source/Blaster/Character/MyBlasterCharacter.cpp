@@ -185,20 +185,22 @@ void AMyBlasterCharacter::OnRep_ReplicatedMovement()
 }
 
 // 서버 한정 - 서버에서만 데미지를 받을 때 호출되도록 되어있으므로 죽는 것도 자연스럽게 서버에서만.
-void AMyBlasterCharacter::Elim()
+void AMyBlasterCharacter::Elim(bool bPlayerLeftGame)
 {
 	DropOrDestroyWeapons();
-	MulticastElim();
-	GetWorldTimerManager().SetTimer(
+	MulticastElim(bPlayerLeftGame);
+	/*GetWorldTimerManager().SetTimer(
 		ElimTimer,
 		this,
 		&AMyBlasterCharacter::ElimTimerFinished,
 		ElimDelay
-	);
+	);*/
+	// 이것을 멀티캐스트 Elim으로 이동하지 않는 한 클라에선 호출이 안됨.
 }
 
-void AMyBlasterCharacter::MulticastElim_Implementation()
+void AMyBlasterCharacter::MulticastElim_Implementation(bool bPlayerLeftGame)
 {
+	bLeftGame = bPlayerLeftGame;
 	if (BlasterPlayerController)
 	{
 		BlasterPlayerController->SetHUDWeaponAmmo(0);
@@ -257,17 +259,40 @@ void AMyBlasterCharacter::MulticastElim_Implementation()
 	{
 		ShowSniperScopeWidget(false);
 	}
+	GetWorldTimerManager().SetTimer(
+		ElimTimer,
+		this,
+		&AMyBlasterCharacter::ElimTimerFinished,
+		ElimDelay
+	);
 
 }
 
 void AMyBlasterCharacter::ElimTimerFinished()
 {
 	ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
-	if (BlasterGameMode)
+	if (BlasterGameMode && !bLeftGame) // 유저가 나간거면 리스폰 시키지 않음.
 	{
 		BlasterGameMode->RequestRespawn(this, Controller);
 	}
+	if (bLeftGame && IsLocallyControlled())
+	{
+		// 델리게이트. -> ReturnToMainMenu쪽에 쓰일 것임.
+		// 유지보수를 위해서 캐릭터 쪽에서는 나갔다는 정보만 알려주자!
+		// 처리는 ReturnToMainMenu에서 할 것임.
+		OnLeftGame.Broadcast();
+	}
 	
+}
+
+void AMyBlasterCharacter::ServerLeaveGame_Implementation()
+{
+	ABlasterGameMode* BlasterGameMode = GetWorld()->GetAuthGameMode<ABlasterGameMode>();
+	BlasterPlayerState = BlasterPlayerState == nullptr ? GetPlayerState<ABlasterPlayerState>() : BlasterPlayerState;
+	if (BlasterGameMode && BlasterPlayerState)
+	{
+		BlasterGameMode->PlayerLeftGame(BlasterPlayerState);
+	}
 }
 
 void AMyBlasterCharacter::DropOrDestroyWeapon(AWeapon* Weapon)

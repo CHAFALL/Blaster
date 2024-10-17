@@ -100,7 +100,7 @@ void ABlasterGameMode::PlayerEliminated(AMyBlasterCharacter* ElimmedCharacter, A
 
 	if (ElimmedCharacter)
 	{
-		ElimmedCharacter->Elim();
+		ElimmedCharacter->Elim(false); // 유저가 떠나진 않고 그냥 죽은 상태
 	}
 }
 
@@ -118,6 +118,23 @@ void ABlasterGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController*
 		UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts);
 		int32 Selection = FMath::RandRange(0, PlayerStarts.Num() - 1);
 		RestartPlayerAtPlayerStart(ElimmedController, PlayerStarts[Selection]);
+	}
+}
+
+// 떠난 플레이어의 상태 정보를 저장하는 객체를 가리키는 포인터
+void ABlasterGameMode::PlayerLeftGame(ABlasterPlayerState* PlayerLeaving)
+{
+	// call elim, passing in true for bLeftGame
+	if (PlayerLeaving == nullptr) return;
+	ABlasterGameState* BlasterGameState = GetGameState<ABlasterGameState>();
+	if (BlasterGameState && BlasterGameState->TopScoringPlayers.Contains(PlayerLeaving))
+	{
+		BlasterGameState->TopScoringPlayers.Remove(PlayerLeaving);
+	}
+	AMyBlasterCharacter* CharacterLeaving = Cast<AMyBlasterCharacter>(PlayerLeaving->GetPawn());
+	if (CharacterLeaving)
+	{
+		CharacterLeaving->Elim(true); // 정말로 유저가 나간 case로 아예 제거 처리할 것.
 	}
 }
 

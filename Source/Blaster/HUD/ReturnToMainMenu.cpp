@@ -6,6 +6,7 @@
 #include "Components/Button.h"
 #include "MultiplayerSessionsSubSystem.h"
 #include "GameFramework/GameModeBase.h"
+#include "Blaster/Character/MyBlasterCharacter.h"
 
 void UReturnToMainMenu::MenuSetup()
 {
@@ -113,12 +114,34 @@ void UReturnToMainMenu::MenuTearDown()
 	
 }
 
-
-
 void UReturnToMainMenu::ReturnButtonClicked()
 {
 	ReturnButton->SetIsEnabled(false);
 
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		APlayerController* FirstPlayerController = World->GetFirstPlayerController();
+		if (FirstPlayerController)
+		{
+			AMyBlasterCharacter* BlasterCharacter = Cast<AMyBlasterCharacter>(FirstPlayerController->GetPawn());
+			if (BlasterCharacter)
+			{
+				BlasterCharacter->ServerLeaveGame();
+				BlasterCharacter->OnLeftGame.AddDynamic(this, &UReturnToMainMenu::OnPlayerLeftGame);
+			}
+			else
+			{
+				ReturnButton->SetIsEnabled(true);
+			}
+		}
+	}
+	
+}
+
+
+void UReturnToMainMenu::OnPlayerLeftGame()
+{
 	if (MultiplayerSessionsSubsystem)
 	{
 		MultiplayerSessionsSubsystem->DestroySession(); // 세션이 파괴될 때까지 기다림. (파괴되면 UReturnToMainMenu::OnDestroySession 실행됨.) (그렇게 콜백을 해놨으니.)
