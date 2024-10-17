@@ -47,11 +47,14 @@ public:
 	class UAnnouncement* Announcement;
 
 	void AddAnnouncement();
-
+	void AddElimAnnouncement(FString Attacker, FString Victim);
 
 protected:
 	virtual void BeginPlay() override;
 private:
+	UPROPERTY()
+	class APlayerController* OwningPlayer;
+
 	FHUDPackage HUDPackage;
 
 	// 구조에선 Spread가 float인데 여긴 FVector(같은 양의 x, y를 분배했기 때문임)
@@ -60,6 +63,18 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float CrosshairSpreadMax = 16.f;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UElimAnnouncement> ElimAnnouncementClass;
+
+	UPROPERTY(EditAnywhere)
+	float ElimAnnouncementTime = 2.5f;
+
+	UFUNCTION()
+	void ElimAnnouncementTimerFinished(UElimAnnouncement* MsgToRemove);
+
+	UPROPERTY()
+	TArray<UElimAnnouncement*> ElimMessages;
 
 public:
 	FORCEINLINE void SetHUDPackage(const FHUDPackage& Package) { HUDPackage = Package; }

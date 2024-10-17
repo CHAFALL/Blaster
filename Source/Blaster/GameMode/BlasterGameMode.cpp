@@ -131,6 +131,15 @@ void ABlasterGameMode::PlayerEliminated(AMyBlasterCharacter* ElimmedCharacter, A
 	{
 		ElimmedCharacter->Elim(false); // 유저가 떠나진 않고 그냥 죽은 상태
 	}
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ABlasterPlayerController* BlasterPlayer = Cast<ABlasterPlayerController>(*It);
+		if (BlasterPlayer && AttackerPlayerState && VictimPlayerState)
+		{
+			BlasterPlayer->BroadcastElim(AttackerPlayerState, VictimPlayerState);
+		}
+	}
 }
 
 void ABlasterGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController)
