@@ -74,3 +74,24 @@ void ABlasterPlayerState::OnRep_Defeats()
 	}
 }
 
+void ABlasterPlayerState::SetTeam(ETeam TeamToSet)
+{
+	Team = TeamToSet;
+
+	AMyBlasterCharacter* BCharacter = Cast<AMyBlasterCharacter>(GetPawn());
+	if (BCharacter)
+	{
+		BCharacter->SetTeamColor(Team);
+	}
+}
+
+
+void ABlasterPlayerState::OnRep_Team()
+{
+	AMyBlasterCharacter* BCharacter = Cast<AMyBlasterCharacter>(GetPawn());
+	if (BCharacter)
+	{
+		BCharacter->SetTeamColor(Team);
+	}
+}
+

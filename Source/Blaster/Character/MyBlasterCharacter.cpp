@@ -376,6 +376,26 @@ void AMyBlasterCharacter::MulticastLostTheLead_Implementation()
 	}
 }
 
+void AMyBlasterCharacter::SetTeamColor(ETeam Team)
+{
+	if (GetMesh() == nullptr || OriginalMaterial == nullptr) return;
+	switch (Team)
+	{
+	case ETeam::ET_NoTeam:
+		GetMesh()->SetMaterial(0, OriginalMaterial);
+		DissolveMaterialInstance = BlueDissolveMatInst;
+		break;
+	case ETeam::ET_BlueTeam:
+		GetMesh()->SetMaterial(0, BlueMaterial);
+		DissolveMaterialInstance = BlueDissolveMatInst;
+		break;
+	case ETeam::ET_RedTeam:
+		GetMesh()->SetMaterial(0, RedMaterial);
+		DissolveMaterialInstance = RedDissolveMatInst;
+		break;
+	}
+}
+
 void AMyBlasterCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -1012,6 +1032,7 @@ void AMyBlasterCharacter::PollInit()
 		{
 			BlasterPlayerState->AddToScore(0.f); // 오호!
 			BlasterPlayerState->AddToDefeats(0);
+			SetTeamColor(BlasterPlayerState->GetTeam());
 
 			// 죽고 태어났는데 내가 여전히 선두인 경우를 대비.
 			ABlasterGameState* BlasterGameState = Cast<ABlasterGameState>(UGameplayStatics::GetGameState(this));
