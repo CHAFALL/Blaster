@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerState.h"
+#include "Blaster/BlasterTypes/Team.h"
 #include "BlasterPlayerState.generated.h"
 
 /**
@@ -40,7 +41,20 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_Defeats)
 	int32 Defeats;
 	
+	UPROPERTY(Replicated)
+	ETeam Team = ETeam::ET_NoTeam;
+
+
+public:
+	FORCEINLINE ETeam GetTeam() const { return Team; }
+	FORCEINLINE void SetTeam(ETeam TeamToSet) { Team = TeamToSet; }
+
+
 };
+
+// 만약에 위의 정보들을 여기서 관리하지 않고 캐릭터로 관리한다면?
+// -> 리스폰 시 데이터 손실 문제가 있음.
+
 
 // 플레이어 컨트롤러는 playerstate에 접속하는 기능을 기본 제공.
 // 하지만 playerstate는 플레이어 컨트롤러에 접속하는 직접적인 기능이 없음.
