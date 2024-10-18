@@ -97,7 +97,7 @@ public:
 	FShotgunServerSideRewindResult ShotgunServerSideRewind(const TArray<AMyBlasterCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime);
 	
 	UFUNCTION(Server, Reliable)
-	void ServerScoreRequest(AMyBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime, class AWeapon* DamageCauser);
+	void ServerScoreRequest(AMyBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime);
 	
 	UFUNCTION(Server, Reliable)
 	void ProjectileServerScoreRequest(AMyBlasterCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime);
@@ -195,3 +195,5 @@ public:
 // 핑이 높은 플레이어는 네트워크 지연으로 인해 자신의 공격이 적중하지 않는 경우를 방지하기 위해
 // 되감기 기술에 의존하게 된다.
 // 그렇다고 핑이 낮은 플레이어만 게임에 참가하게 한다면 많은 플레이어를 잃게 된다.
+
+// SSR은 뼈 이름이 뭔지와 같은 것을 파악할 필요가 없음. (헤드샷 part.)

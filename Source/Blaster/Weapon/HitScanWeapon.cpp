@@ -60,8 +60,7 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 						BlasterCharacter,
 						Start,
 						HitTarget,
-						BlasterOwnerController->GetServerTime() - BlasterOwnerController->SingleTripTime, // 클라이언트가 특정한 패킷을 서버에 보냈던 시점의 서버 시간을 추정
-						this
+						BlasterOwnerController->GetServerTime() - BlasterOwnerController->SingleTripTime // 클라이언트가 특정한 패킷을 서버에 보냈던 시점의 서버 시간을 추정
 					);
 				}
 			}
