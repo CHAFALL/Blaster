@@ -27,11 +27,11 @@ void AProjectileWeapon::Fire(const FVector& HitTarget)
 		SpawnParams.Instigator = InstigatorPawn; // 선동자
 		
 		AProjectile* SpawnedProjectile = nullptr;
-		if (bUseServerSideRewind) 
+		if (bUseServerSideRewind)
 		{
-			if (InstigatorPawn->HasAuthority()) // server - (서버측은 되감기를 사용할 필요가 없음)
+			if (InstigatorPawn->HasAuthority()) // server
 			{
-				if (InstigatorPawn->IsLocallyControlled()) // server, host - use replicated projectile 
+				if (InstigatorPawn->IsLocallyControlled()) // server, host - use replicated projectile
 				{
 					SpawnedProjectile = World->SpawnActor<AProjectile>(ProjectileClass, SocketTransform.GetLocation(), TargetRotation, SpawnParams);
 					SpawnedProjectile->bUseServerSideRewind = false;
@@ -41,7 +41,7 @@ void AProjectileWeapon::Fire(const FVector& HitTarget)
 				else // server, not locally controlled - spawn non-replicated projectile, SSR
 				{
 					SpawnedProjectile = World->SpawnActor<AProjectile>(ServerSideRewindProjectileClass, SocketTransform.GetLocation(), TargetRotation, SpawnParams);
-					SpawnedProjectile->bUseServerSideRewind = true; //
+					SpawnedProjectile->bUseServerSideRewind = true;
 				}
 			}
 			else // client, using SSR
@@ -68,7 +68,6 @@ void AProjectileWeapon::Fire(const FVector& HitTarget)
 				SpawnedProjectile->bUseServerSideRewind = false;
 				SpawnedProjectile->Damage = Damage;
 				SpawnedProjectile->HeadShotDamage = HeadShotDamage;
-
 			}
 		}
 	}
