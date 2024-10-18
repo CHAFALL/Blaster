@@ -233,6 +233,7 @@ void AMyBlasterCharacter::MulticastElim_Implementation(bool bPlayerLeftGame)
 	// Disable collision
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	// Spawn elim bot
 	if (ElimBotEffect)
@@ -354,7 +355,7 @@ void AMyBlasterCharacter::MulticastGainedTheLead_Implementation()
 	if (CrownSystem == nullptr) return;
 	CrownComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
 		CrownSystem,
-		GetCapsuleComponent(),
+		GetMesh(),
 		FName(),
 		GetActorLocation() + FVector(0.f, 0.f, 110.f),
 		GetActorRotation(),
@@ -914,6 +915,10 @@ void AMyBlasterCharacter::HideCameraIfCharacterClose()
 		{
 			Combat->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = true; // 무기 mesh 가시성이 소유자에게만 거짓으로 설정됨.
 		}
+		if (Combat && Combat->SecondaryWeapon && Combat->SecondaryWeapon->GetWeaponMesh())
+		{
+			Combat->SecondaryWeapon->GetWeaponMesh()->bOwnerNoSee = true;
+		}
 	}
 	else
 	{
@@ -921,6 +926,10 @@ void AMyBlasterCharacter::HideCameraIfCharacterClose()
 		if (Combat && Combat->EquippedWeapon && Combat->EquippedWeapon->GetWeaponMesh())
 		{
 			Combat->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = false;
+		}
+		if (Combat && Combat->SecondaryWeapon && Combat->SecondaryWeapon->GetWeaponMesh())
+		{
+			Combat->SecondaryWeapon->GetWeaponMesh()->bOwnerNoSee = false;
 		}
 	}
 
