@@ -4,8 +4,14 @@
 #include "TeamsGameMode.h"
 #include "Blaster/GameState/BlasterGameState.h"
 #include "Blaster/PlayerState/BlasterPlayerState.h"
+#include "Blaster/PlayerController/BlasterPlayerController.h"
 #include "Kismet/GameplayStatics.h"
 
+
+ATeamsGameMode::ATeamsGameMode()
+{
+	bTeamsMatch = true;
+}
 
 // 도중 난입
 void ATeamsGameMode::PostLogin(APlayerController* NewPlayer)
@@ -94,5 +100,37 @@ void ATeamsGameMode::HandleMatchHasStarted()
 				}
 			}
 		}
+	}
+}
+
+// me
+void ATeamsGameMode::PlayerEliminated(AMyBlasterCharacter* ElimmedCharacter, ABlasterPlayerController* VictimController, ABlasterPlayerController* AttackerController)
+{
+	Super::PlayerEliminated(ElimmedCharacter, VictimController, AttackerController);
+
+	ABlasterGameState* BGameState = Cast<ABlasterGameState>(UGameplayStatics::GetGameState(this));
+	ABlasterPlayerState* AttackerPlayerState = AttackerController ? Cast<ABlasterPlayerState>(AttackerController->PlayerState) : nullptr;
+	ABlasterPlayerState* VictimPlayerState = VictimController ? Cast<ABlasterPlayerState>(VictimController->PlayerState) : nullptr;
+
+
+	if (BGameState == nullptr || AttackerPlayerState == nullptr || VictimPlayerState == nullptr)
+	{
+		return;
+	}
+
+	// 자살인 경우 점수 업데이트 하지 않고 return (me)
+	if (AttackerPlayerState == VictimPlayerState)
+	{
+		return;
+	}
+
+	// 팀 점수 업데이트
+	if (AttackerPlayerState->GetTeam() == ETeam::ET_BlueTeam)
+	{
+		BGameState->BlueTeamScores();
+	}
+	else if (AttackerPlayerState->GetTeam() == ETeam::ET_RedTeam)
+	{
+		BGameState->RedTeamScores();
 	}
 }

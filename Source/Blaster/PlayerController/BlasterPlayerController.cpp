@@ -70,6 +70,81 @@ void ABlasterPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ABlasterPlayerController, MatchState);
+	DOREPLIFETIME(ABlasterPlayerController, bShowTeamScores);
+}
+
+void ABlasterPlayerController::HideTeamScores()
+{
+	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+
+	bool bHUDValid = BlasterHUD &&
+		BlasterHUD->CharacterOverlay &&
+		BlasterHUD->CharacterOverlay->RedTeamScore &&
+		BlasterHUD->CharacterOverlay->BlueTeamScore &&
+		BlasterHUD->CharacterOverlay->ScoreSpacerText;
+	if (bHUDValid)
+	{
+		BlasterHUD->CharacterOverlay->RedTeamScore->SetText(FText());
+		BlasterHUD->CharacterOverlay->BlueTeamScore->SetText(FText());
+		BlasterHUD->CharacterOverlay->ScoreSpacerText->SetText(FText());
+	}
+}
+
+void ABlasterPlayerController::InitTeamScores()
+{
+	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+
+	bool bHUDValid = BlasterHUD &&
+		BlasterHUD->CharacterOverlay &&
+		BlasterHUD->CharacterOverlay->RedTeamScore &&
+		BlasterHUD->CharacterOverlay->BlueTeamScore &&
+		BlasterHUD->CharacterOverlay->ScoreSpacerText;
+	if (bHUDValid)
+	{
+		FString Zero("0");
+		FString Spacer("|");
+		BlasterHUD->CharacterOverlay->RedTeamScore->SetText(FText::FromString(Zero));
+		BlasterHUD->CharacterOverlay->BlueTeamScore->SetText(FText::FromString(Zero));
+		BlasterHUD->CharacterOverlay->ScoreSpacerText->SetText(FText::FromString(Spacer));
+	}
+}
+
+void ABlasterPlayerController::SetHUDRedTeamScores(int32 RedScore)
+{
+	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+
+	bool bHUDValid = BlasterHUD &&
+		BlasterHUD->CharacterOverlay &&
+		BlasterHUD->CharacterOverlay->RedTeamScore;
+	if (bHUDValid)
+	{
+		FString ScoreText = FString::Printf(TEXT("%d"), RedScore);
+		BlasterHUD->CharacterOverlay->RedTeamScore->SetText(FText::FromString(ScoreText));
+	}
+	else
+	{
+		bInitializeRedScore = true;
+		HUDRedScore = RedScore;
+	}
+}
+
+void ABlasterPlayerController::SetHUDBlueTeamScores(int32 BlueScore)
+{
+	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
+
+	bool bHUDValid = BlasterHUD &&
+		BlasterHUD->CharacterOverlay &&
+		BlasterHUD->CharacterOverlay->BlueTeamScore;
+	if (bHUDValid)
+	{
+		FString ScoreText = FString::Printf(TEXT("%d"), BlueScore);
+		BlasterHUD->CharacterOverlay->BlueTeamScore->SetText(FText::FromString(ScoreText));
+	}
+	else
+	{
+		bInitializeBlueScore = true;
+		HUDBlueScore = BlueScore;
+	}
 }
 
 void ABlasterPlayerController::Tick(float DeltaTime)
@@ -145,6 +220,19 @@ void ABlasterPlayerController::ShowReturnToMainMenu()
 
 }
 
+// 클라에도 알려주기 위해
+void ABlasterPlayerController::OnRep_ShowTeamScores()
+{
+	if (bShowTeamScores)
+	{
+		InitTeamScores();
+	}
+	else
+	{
+		HideTeamScores();
+	}
+}
+
 // Is the Ping too high?
 void ABlasterPlayerController::ServerReportPingStatus_Implementation(bool bHighPing)
 {
@@ -211,19 +299,20 @@ void ABlasterPlayerController::ServerCheckMatchState_Implementation()
 		CooldownTime = GameMode->CooldownTime;
 		LevelStartingTime = GameMode->LevelStartingTime;
 		MatchState = GameMode->GetMatchState();
-		ClientJoinMidgame(MatchState, WarmupTime, MatchTime, CooldownTime, LevelStartingTime);
+		ClientJoinMidgame(MatchState, WarmupTime, MatchTime, CooldownTime, LevelStartingTime, bShowTeamScores);
 
 	}
 }
 
-void ABlasterPlayerController::ClientJoinMidgame_Implementation(FName StateOfMatch, float Warmup, float Match, float Cooldown, float StartingTime)
+// 커뮤
+void ABlasterPlayerController::ClientJoinMidgame_Implementation(FName StateOfMatch, float Warmup, float Match, float Cooldown, float StartingTime, bool bIsTeamsMatch)
 {
 	WarmupTime = Warmup;
 	MatchTime = Match;
 	CooldownTime = Cooldown;
 	LevelStartingTime = StartingTime;
 	MatchState = StateOfMatch;
-	OnMatchStateSet(MatchState);
+	OnMatchStateSet(MatchState, bIsTeamsMatch);
 
 	// 진행중인 상태에 중도난입하면 공지 추가 x
 	if (BlasterHUD && MatchState == MatchState::WaitingToStart)
@@ -505,6 +594,8 @@ void ABlasterPlayerController::PollInit()
 				if (bInitializeDefeats) SetHUDDefeats(HUDDefeats);
 				if (bInitializeCarriedAmmo) SetHUDCarriedAmmo(HUDCarriedAmmo);
 				if (bInitializeWeaponAmmo) SetHUDWeaponAmmo(HUDWeaponAmmo);
+				if (bInitializeRedScore) SetHUDRedTeamScores(HUDRedScore); // me
+				if (bInitializeBlueScore) SetHUDBlueTeamScores(HUDBlueScore);
 
 				AMyBlasterCharacter* BlasterCharacter = Cast<AMyBlasterCharacter>(GetPawn());
 				if (BlasterCharacter && BlasterCharacter->GetCombat())
@@ -549,13 +640,13 @@ void ABlasterPlayerController::ReceivedPlayer()
 // 서버에서만 일어남. (게임모드에서 호출하니깐)
 // 클라도 매치 상태가 뭔지 알아야 됨.
 // 상태가 바뀌면 RPC 발동하겠지!!
-void ABlasterPlayerController::OnMatchStateSet(FName State)
+void ABlasterPlayerController::OnMatchStateSet(FName State, bool bTeamsMatch)
 {
 	MatchState = State;
 
 	if (MatchState == MatchState::InProgress)
 	{
-		HandleMatchHasStarted();
+		HandleMatchHasStarted(bTeamsMatch);
 	}
 	else if (MatchState == MatchState::Cooldown)
 	{
@@ -577,9 +668,10 @@ void ABlasterPlayerController::OnRep_MatchState()
 }
 
 
-
-void ABlasterPlayerController::HandleMatchHasStarted()
+// good
+void ABlasterPlayerController::HandleMatchHasStarted(bool bTeamsMatch)
 {
+	if (HasAuthority()) bShowTeamScores = bTeamsMatch;
 	BlasterHUD = BlasterHUD == nullptr ? Cast<ABlasterHUD>(GetHUD()) : BlasterHUD;
 	if (BlasterHUD)
 	{
@@ -588,6 +680,15 @@ void ABlasterPlayerController::HandleMatchHasStarted()
 		{
 			// 승리나 패배 관련으로 Announcement을 재활용 할 것이므로 제거는 안함.
 			BlasterHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
+		}
+		if (!HasAuthority()) return;
+		if (bTeamsMatch)
+		{
+			InitTeamScores();
+		}
+		else
+		{
+			HideTeamScores();
 		}
 	}
 }
