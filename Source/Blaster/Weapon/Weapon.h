@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "WeaponTypes.h"
+#include "Blaster/BlasterTypes/Team.h" 
 #include "Weapon.generated.h"
 
 UENUM(BlueprintType)
@@ -209,7 +210,12 @@ private:
 	UPROPERTY(EditAnywhere)
 	EWeaponType WeaponType;
 
-	
+
+	// flag 클래스에 배치하는 대신에 무기 클래스에 팀 개념을 주입하는 이유?
+	// 무기가 픽업 위젯을 표시하고 캐릭터가 무기와 겹치는 이벤트가 있는 클래스이기 때문에
+	// flag인 경우 무기가 동일한 팀을 가지지 않은 한 이러한 일이 발생하지 않도록 방지하기 위해.
+	UPROPERTY(EditAnywhere)
+	ETeam Team;
 
 public:
 	void SetWeaponState(EWeaponState State);
@@ -229,6 +235,5 @@ public:
 	FORCEINLINE float GetDamage() const { return Damage; }
 	FORCEINLINE float GetHeadShotDamage() const { return HeadShotDamage; }
 };
-
 
 
