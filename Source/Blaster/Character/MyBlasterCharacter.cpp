@@ -26,6 +26,8 @@
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Blaster/GameState/BlasterGameState.h"
+#include "Blaster/PlayerStart/TeamPlayerStart.h"
+#include "Components/ArrowComponent.h"
 
 AMyBlasterCharacter::AMyBlasterCharacter()
 {
@@ -333,6 +335,51 @@ void AMyBlasterCharacter::DropOrDestroyWeapons()
 			Combat->TheFlag->Dropped();
 		}
 
+	}
+}
+
+void AMyBlasterCharacter::OnPlayerStateInitialized()
+{
+	BlasterPlayerState->AddToScore(0.f);
+	BlasterPlayerState->AddToDefeats(0);
+	SetTeamColor(BlasterPlayerState->GetTeam());
+	SetSpawnPoint();
+}
+
+void AMyBlasterCharacter::SetSpawnPoint()
+{
+	if (HasAuthority() && BlasterPlayerState->GetTeam() != ETeam::ET_NoTeam)
+	{
+		TArray<AActor*> PlayerStarts;
+		UGameplayStatics::GetAllActorsOfClass(this, ATeamPlayerStart::StaticClass(), PlayerStarts);
+		TArray<ATeamPlayerStart*> TeamPlayerStarts;
+		for (auto Start : PlayerStarts)
+		{
+			ATeamPlayerStart* TeamStart = Cast<ATeamPlayerStart>(Start);
+			if (TeamStart && TeamStart->Team == BlasterPlayerState->GetTeam())
+			{
+				TeamPlayerStarts.Add(TeamStart); // 해당 팀만 들어가겠지.
+			}
+		}
+		if (TeamPlayerStarts.Num() > 0)
+		{
+			ATeamPlayerStart* ChosenPlayerStart = TeamPlayerStarts[FMath::RandRange(0, TeamPlayerStarts.Num() - 1)];
+			UArrowComponent* ArrowComponentStart = ChosenPlayerStart->FindComponentByClass<UArrowComponent>();
+			// 랜덤 방향으로 바라보는 것을 방지
+			if (ArrowComponentStart)
+			{
+				SetActorLocationAndRotation(
+					ChosenPlayerStart->GetActorLocation(),
+					ArrowComponentStart->GetComponentRotation()
+				);
+			}
+			else
+			{
+				SetActorLocationAndRotation(
+					ChosenPlayerStart->GetActorLocation(),
+					ChosenPlayerStart->GetActorRotation());
+			}
+		}
 	}
 }
 
@@ -1054,10 +1101,7 @@ void AMyBlasterCharacter::PollInit()
 		BlasterPlayerState = GetPlayerState<ABlasterPlayerState>();
 		if (BlasterPlayerState)
 		{
-			BlasterPlayerState->AddToScore(0.f); // 오호!
-			BlasterPlayerState->AddToDefeats(0);
-			SetTeamColor(BlasterPlayerState->GetTeam());
-
+			OnPlayerStateInitialized();
 			// 죽고 태어났는데 내가 여전히 선두인 경우를 대비.
 			ABlasterGameState* BlasterGameState = Cast<ABlasterGameState>(UGameplayStatics::GetGameState(this));
 			if (BlasterGameState && BlasterGameState->TopScoringPlayers.Contains(BlasterPlayerState))
