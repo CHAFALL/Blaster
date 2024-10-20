@@ -406,5 +406,6 @@ public:
 	FORCEINLINE ULagCompensationComponent* GetLagCompensation() const { return LagCompensation; }
 	FORCEINLINE bool IsHoldingTheFlag() const;
 	ETeam GetTeam();
+	void SetHoldingTheFlag(bool bHolding);
 };
 

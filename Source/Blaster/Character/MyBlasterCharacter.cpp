@@ -484,6 +484,10 @@ void AMyBlasterCharacter::RotateInPlace(float DeltaTime)
 		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 		return;
 	}
+	// 깃발을 안 들면 되돌림.
+	if (Combat && Combat->EquippedWeapon) GetCharacterMovement()->bOrientRotationToMovement = false;
+	if (Combat && Combat->EquippedWeapon) bUseControllerRotationYaw = true;
+
 
 	if (bDisableGameplay)
 	{
@@ -1211,6 +1215,12 @@ ETeam AMyBlasterCharacter::GetTeam()
 
 	return BlasterPlayerState->GetTeam();
 
+}
+
+void AMyBlasterCharacter::SetHoldingTheFlag(bool bHolding)
+{
+	if (Combat == nullptr) return;
+	Combat->bHoldingTheFlag = bHolding;
 }
 
 
