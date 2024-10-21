@@ -1114,6 +1114,18 @@ void AMyBlasterCharacter::PollInit()
 			}
 		}
 	}
+	// 버그 수정 (초기에 서버 탄약 안보이는)
+	if (BlasterPlayerController == nullptr)
+	{
+		BlasterPlayerController = BlasterPlayerController == nullptr ? Cast<ABlasterPlayerController>(Controller) : BlasterPlayerController;
+		if (BlasterPlayerController)
+		{
+			SpawnDefaultWeapon();
+			UpdateHUDAmmo();
+			UpdateHUDHealth();
+			UpdateHUDShield();
+		}
+	}
 }
 
 
