@@ -3,21 +3,43 @@
 
 #include "LobbyGameMode.h"
 #include "GameFramework/GameStateBase.h"
+#include "MultiplayerSessionsSubsystem.h"
 
-// Æ¯Á¤ ¼ö ÀÌ»óÀÇ ÇÃ·¹ÀÌ¾î°¡ ¸ðÀÌ¸é »õ·Î¿î °÷À¸·Î ¿©Çà
+// íŠ¹ì • ìˆ˜ ì´ìƒì˜ í”Œë ˆì´ì–´ê°€ ëª¨ì´ë©´ ìƒˆë¡œìš´ ê³³ìœ¼ë¡œ ì—¬í–‰
 void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
-	// °ÔÀÓ¿¡ ¾ó¸¶³ª ¸¹Àº ÇÃ·¹ÀÌ¾î°¡ ÀÖ´ÂÁö
+	// ê²Œìž„ì— ì–¼ë§ˆë‚˜ ë§Žì€ í”Œë ˆì´ì–´ê°€ ìžˆëŠ”ì§€
 	int32 NumberOfPlayers = GameState.Get()->PlayerArray.Num();
 
-	if (NumberOfPlayers == 2)
+	// me
+	UGameInstance* GameInstance = GetGameInstance();
+	if (GameInstance)
 	{
-		UWorld* World = GetWorld();
-		if (World)
+		UMultiplayerSessionsSubsystem* Subsystem = GameInstance->GetSubsystem<UMultiplayerSessionsSubsystem>();
+		check(Subsystem);
+
+		if (NumberOfPlayers == Subsystem->DesiredNumPublicConnections)
 		{
-			bUseSeamlessTravel = true; // ¿øÇÒÇÏ°Ô ¿©ÇàÇÏ±â
-			World->ServerTravel(FString("/Game/Maps/BlasterMap?listen"));
+			UWorld* World = GetWorld();
+			if (World)
+			{
+				bUseSeamlessTravel = true;
+
+				FString MatchType = Subsystem->DesiredMatchType;
+				if (MatchType == "FreeForAll")
+				{
+					World->ServerTravel(FString("/Game/Maps/BlasterMap?listen"));
+				}
+				else if (MatchType == "Teams")
+				{
+					World->ServerTravel(FString("/Game/Maps/Teams?listen"));
+				}
+				else if (MatchType == "CaptureTheFlag")
+				{
+					World->ServerTravel(FString("/Game/Maps/CaptureTheFlag?listen"));
+				}
+			}
 		}
 	}
 }

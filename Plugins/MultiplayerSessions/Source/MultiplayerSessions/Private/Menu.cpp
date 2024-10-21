@@ -147,6 +147,7 @@ void UMenu::OnStartSession(bool bWasSuccessful)
 {
 }
 
+
 void UMenu::HostButtonClicked()
 {
 	HostButton->SetIsEnabled(false);

@@ -47,6 +47,9 @@ public:
 	FMultiplayerOnDestroySessionComplete MultiplayerOnDestroySessionComplete;
 	FMultiplayerOnStartSessionComplete MultiplayerOnStartSessionComplete;
 
+	// me
+	int32 DesiredNumPublicConnections{};
+	FString DesiredMatchType{};
 protected:
 
 	//
