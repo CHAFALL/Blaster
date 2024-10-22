@@ -682,7 +682,8 @@ void ABlasterPlayerController::HandleMatchHasStarted(bool bTeamsMatch)
 			// 승리나 패배 관련으로 Announcement을 재활용 할 것이므로 제거는 안함.
 			BlasterHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
 		}
-		if (!HasAuthority()) return;
+		//if (!HasAuthority()) return; 이걸 죽임으로써 모드에 따른 갱신이 제대로 되도록 함
+		// 안된 이유 : false -> false는 값이 바뀌지 않아 값복사가 되지 않음...
 		if (bTeamsMatch)
 		{
 			InitTeamScores();
