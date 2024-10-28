@@ -108,6 +108,7 @@ void ABlasterPlayerController::InitTeamScores()
 		BlasterHUD->CharacterOverlay->BlueTeamScore->SetText(FText::FromString(Zero));
 		BlasterHUD->CharacterOverlay->ScoreSpacerText->SetText(FText::FromString(Spacer));
 	}
+
 }
 
 void ABlasterPlayerController::SetHUDRedTeamScores(int32 RedScore)
@@ -122,11 +123,6 @@ void ABlasterPlayerController::SetHUDRedTeamScores(int32 RedScore)
 		FString ScoreText = FString::Printf(TEXT("%d"), RedScore);
 		BlasterHUD->CharacterOverlay->RedTeamScore->SetText(FText::FromString(ScoreText));
 	}
-	else
-	{
-		bInitializeRedScore = true;
-		HUDRedScore = RedScore;
-	}
 }
 
 void ABlasterPlayerController::SetHUDBlueTeamScores(int32 BlueScore)
@@ -140,11 +136,6 @@ void ABlasterPlayerController::SetHUDBlueTeamScores(int32 BlueScore)
 	{
 		FString ScoreText = FString::Printf(TEXT("%d"), BlueScore);
 		BlasterHUD->CharacterOverlay->BlueTeamScore->SetText(FText::FromString(ScoreText));
-	}
-	else
-	{
-		bInitializeBlueScore = true;
-		HUDBlueScore = BlueScore;
 	}
 }
 
@@ -295,6 +286,7 @@ void ABlasterPlayerController::ServerCheckMatchState_Implementation()
 	ABlasterGameMode* GameMode = Cast<ABlasterGameMode>(UGameplayStatics::GetGameMode(this));
 	if (GameMode)
 	{
+		bShowTeamScores = GameMode->bTeamsMatch;
 		WarmupTime = GameMode->WarmupTime;
 		MatchTime = GameMode->MatchTime;
 		CooldownTime = GameMode->CooldownTime;
@@ -595,8 +587,6 @@ void ABlasterPlayerController::PollInit()
 				if (bInitializeDefeats) SetHUDDefeats(HUDDefeats);
 				if (bInitializeCarriedAmmo) SetHUDCarriedAmmo(HUDCarriedAmmo);
 				if (bInitializeWeaponAmmo) SetHUDWeaponAmmo(HUDWeaponAmmo);
-				if (bInitializeRedScore) SetHUDRedTeamScores(HUDRedScore); // me
-				if (bInitializeBlueScore) SetHUDBlueTeamScores(HUDBlueScore);
 
 				AMyBlasterCharacter* BlasterCharacter = Cast<AMyBlasterCharacter>(GetPawn());
 				if (BlasterCharacter && BlasterCharacter->GetCombat())
@@ -682,7 +672,7 @@ void ABlasterPlayerController::HandleMatchHasStarted(bool bTeamsMatch)
 			// 승리나 패배 관련으로 Announcement을 재활용 할 것이므로 제거는 안함.
 			BlasterHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
 		}
-		//if (!HasAuthority()) return; 이걸 죽임으로써 모드에 따른 갱신이 제대로 되도록 함
+		//if (!HasAuthority()) return; // 이걸 죽임으로써 모드에 따른 갱신이 제대로 되도록 함, 근데 이걸 죽이니 팀게임이 문제가 생김...
 		// 안된 이유 : false -> false는 값이 바뀌지 않아 값복사가 되지 않음...
 		if (bTeamsMatch)
 		{
